@@ -1,0 +1,8 @@
+*.asc
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+.terraform/
+.vscode
+*.backup
+./*.tfstate
+terraform.tfstate

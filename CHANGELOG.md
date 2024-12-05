@@ -2,7 +2,7 @@
 
 IMPROVEMENTS:
 
-* **openapi_validation:** Added document in `waf_openapi_validation.html.markdown`
+* **Guides:** Added document for FortiWebCloud migration.
 
 
 ## 1.0.1 (December 8, 2024)

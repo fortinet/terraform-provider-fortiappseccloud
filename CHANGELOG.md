@@ -1,3 +1,9 @@
+## 1.0.3 (December 9, 2024)
+
+BUG FIXES:
+
+* **Guides:** Fix migration document path from Guides to guides.
+
 ## 1.0.2 (December 8, 2024)
 
 IMPROVEMENTS:

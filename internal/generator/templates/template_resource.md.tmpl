@@ -1,0 +1,53 @@
+---
+page_title: "fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}} Resource - fortiappseccloud"
+subcategory: "WAF"
+description: |-
+  Manages {{.Resource.OperationName}} configuration for one FortiAppSec Cloud WAF template.
+---
+
+<!-- {{.Marker}} -->
+
+# fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}}
+
+Configures {{.Resource.OperationName}} for one FortiAppSec Cloud WAF template using the static template endpoint `{{.Resource.TemplateGetPath}}`. This resource owns the template's module settings. To make an application inherit them, configure the matching app module resource with `template = true` and omit its `configs` block.
+
+Declare only one `fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}}` resource for a WAF template.
+
+## Example Usage
+
+```hcl
+{{.Resource.Docs.TemplateExampleHCL -}}
+```
+{{- if .Resource.Docs.ConfigurationNotes}}
+
+## Configuration Notes
+
+{{.Resource.Docs.ConfigurationNotes}}
+{{- end}}
+
+## Argument Reference
+
+- `template_id` (Required, Forces replacement) — WAF template ID.
+- `configs` (Required) — Typed {{.Resource.OperationName}} configuration. Its attributes and ownership-wrapper blocks are identical to `fortiappseccloud_{{.Resource.TypeNameSuffix}}` when that app resource uses `template = false`.
+
+## Import
+
+Import using the template ID:
+
+```shell
+terraform import fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}}.example TEMPLATE_ID
+```
+
+The first read after import hydrates all supported ownership wrappers.
+
+## Destroy Behavior
+
+{{- if .Resource.TemplateDestroyDisables}}
+{{- if .Resource.TemplateDestroyCoupledFields}}
+Destroy performs a fresh GET, preserves the complete response, sets `template=false`, `configs.status=false`, `configs.cache.status=false`, and `configs.compress.status=false`, sends the complete PUT, and verifies the normalized GET response before Terraform removes the resource from state. The three statuses are a reviewed coupled disable contract for template caching/compression.
+{{- else}}
+Destroy performs a fresh GET, preserves the complete response, sets `template=false` and `configs.status=false`, sends the complete PUT, and verifies the normalized GET response before Terraform removes the resource from state.
+{{- end}}
+{{- else}}
+Destroy forgets this resource without sending a disabling PUT. The remote {{.Resource.OperationName}} template configuration remains unchanged and Terraform emits a warning.
+{{- end}}

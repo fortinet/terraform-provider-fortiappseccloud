@@ -1,0 +1,238 @@
+---
+subcategory: ""
+page_title: "Upgrade FortiAppSecCloud provider v1.0.5 to v2.0"
+description: |-
+  Migrate FortiAppSecCloud provider v1.0.5 state and configuration to v2.0.
+---
+
+# Upgrade from v1.0.5 to v2.0
+
+Version 2.0 upgrades state created by the public `fortinet/fortiappseccloud` provider v1.0.5. The provider upgrades the state schema automatically, but Terraform configuration must be updated before the first v2 plan.
+
+Keep the existing resource addresses during the upgrade. Do not edit the state JSON, run `terraform state mv`, or run `terraform state replace-provider` for a state already using `fortinet/fortiappseccloud`.
+
+If the state still uses the historical private `fortinet/terraform/fortiwebcloud` provider, complete the [private-provider to v1.0.5 migration](fortiwebcloud_migration.html) first.
+
+## Before You Begin
+
+1. Commit or otherwise save the current Terraform configuration.
+2. Confirm that the v1.0.5 configuration manages the intended application.
+3. Preserve every local file referenced by `validation_files`. Relative paths must continue to resolve from the Terraform working directory.
+4. Record the application's platform and placement, listeners, initial origin, CDN selection, and attached template from the FortiAppSecCloud portal. The v1 state does not contain every placement value needed by v2.
+5. Back up the state to a protected location. State and saved plan files can contain sensitive data; do not commit them.
+
+For a local state, a restrictive backup can be created with:
+
+```shell
+umask 077
+terraform state pull > terraform-v1.0.5.tfstate.backup
+```
+
+If a remote backend provides versioning or snapshots, also create or identify a recoverable backend version before continuing.
+
+When the configuration contains only `fortiappseccloud_waf_app`, run a final v1.0.5 plan and resolve any unexpected drift. A v1.0.5 refresh can fail when `fortiappseccloud_waf_openapi_validation` is present; if that occurs, preserve the state and validation files and continue with the v2 migration instead of changing the state manually.
+
+## Configuration Mapping
+
+Update each existing resource in place. For example, keep `fortiappseccloud_waf_app.example` under the same address rather than declaring a differently named replacement.
+
+| v1.0.5 configuration | v2.0 configuration |
+| --- | --- |
+| `app_service` map keys | Lowercase `services` set members |
+| `app_service` map values | `http_port` and `https_port` |
+| `origin_server_ip`, `origin_server_service`, `origin_server_port` | One `initial_origin` block using lowercase `http` or `https` |
+| `block` | `block_mode` |
+| Platform not represented in v1 state | `platform` set to the application's current platform |
+| `cdn = false` | `cdn = false` and the application's current `region` |
+| `cdn = true`, `continent_cdn = false` | `cdn = true` and `global_cdn = true` |
+| `cdn = true`, `continent_cdn = true` | `cdn = true` and `continent` set to the former continent value |
+| `template` | Observed as `attached_template_id`; manage future membership with `fortiappseccloud_waf_template_attachment` |
+| Computed `cname` string | Computed `cnames` list |
+
+This table describes how to migrate the Terraform configuration. The state upgrader uses the `app_service` keys to recover the enabled services, but initializes `http_port` and `https_port` in upgraded state to `80` and `443`; it does not copy custom port values from the legacy map. If the v1.0.5 map uses different values, set those exact values explicitly in the v2 `http_port` and `https_port` arguments and review the first refresh and normal plans carefully.
+
+Omit `certificate_mode` during the first migration plan unless its current value is known. The provider records the observed server mode during refresh. The `precheck` argument defaults to `false` and is intended for creation checks, not migration.
+
+### Application Example
+
+A v1.0.5 application might contain:
+
+```hcl
+resource "fortiappseccloud_waf_app" "example" {
+  app_name    = "example-app"
+  domain_name = "www.example.com"
+  app_service = {
+    http  = 80
+    https = 443
+  }
+  origin_server_ip      = "origin.example.com"
+  origin_server_service = "HTTPS"
+  origin_server_port    = 443
+  cdn                   = false
+  block                 = false
+}
+```
+
+Keep the resource address and translate its arguments for v2.0:
+
+```hcl
+terraform {
+  required_providers {
+    fortiappseccloud = {
+      source  = "fortinet/fortiappseccloud"
+      version = "= 2.0.0"
+    }
+  }
+}
+
+resource "fortiappseccloud_waf_app" "example" {
+  app_name    = "example-app"
+  domain_name = "www.example.com"
+  services    = ["http", "https"]
+  http_port   = 80
+  https_port  = 443
+  platform    = "AWS"
+  region      = "us-east-1"
+  cdn         = false
+  block_mode  = false
+
+  initial_origin {
+    address  = "origin.example.com"
+    protocol = "https"
+    port     = 443
+  }
+}
+```
+
+Use the application's actual platform and placement. Incorrect replacement-only values can produce a replacement plan.
+
+### OpenAPI Validation Example
+
+The v1.0.5 resource identified its application by name:
+
+```hcl
+resource "fortiappseccloud_waf_openapi_validation" "example" {
+  app_name = fortiappseccloud_waf_app.example.app_name
+  enable   = true
+  action   = "alert_deny"
+  validation_files = [
+    "${path.module}/openapi.yaml",
+  ]
+}
+```
+
+In v2.0, keep the same resource address and identify the application by stable endpoint ID:
+
+```hcl
+resource "fortiappseccloud_waf_openapi_validation" "example" {
+  ep_id  = fortiappseccloud_waf_app.example.ep_id
+  enable = true
+  action = "alert_deny"
+  validation_files = [
+    "${path.module}/openapi.yaml",
+  ]
+}
+```
+
+Keep the referenced documents at the same paths for the first v2 plan. Changing a path can produce an upload plan even when the document contents are unchanged.
+
+Update references to the former computed `cname` attribute as well:
+
+```hcl
+output "cnames" {
+  value = fortiappseccloud_waf_app.example.cnames
+}
+```
+
+## Run the Upgrade
+
+After updating all affected configuration, initialize the v2 provider:
+
+```shell
+terraform init -upgrade
+```
+
+First create a refresh-only plan. This lets Terraform run the provider's state upgraders and reconcile computed values without proposing remote configuration changes:
+
+```shell
+terraform plan -refresh-only -out=v2-refresh.tfplan
+terraform show v2-refresh.tfplan
+```
+
+Review the plan carefully. It must not delete or replace the application. If the refresh-only plan is acceptable, persist the upgraded state:
+
+```shell
+terraform apply v2-refresh.tfplan
+```
+
+Then run the normal migration gate:
+
+```shell
+terraform plan -detailed-exitcode
+```
+
+Exit code `0` means the migrated configuration matches the remote objects. Exit code `2` means Terraform found changes; review them and correct the configuration before applying. Exit code `1` indicates an error. Do not apply a delete or replacement plan as part of migration.
+
+## Adopt Separately Managed v2 Resources
+
+The application state upgrader cannot create additional Terraform resource addresses. Complete the core migration first, then adopt these resources separately when needed.
+
+### Attached Template
+
+The first v2 refresh records the existing attachment in `attached_template_id` and `attached_template_name`. To manage that relationship, declare `fortiappseccloud_waf_template_attachment`, import the existing relationship using `template_id:ep_id`, and require another zero-change plan before making changes:
+
+```shell
+terraform import fortiappseccloud_waf_template_attachment.example '<template_id>:<ep_id>'
+terraform plan -detailed-exitcode
+```
+
+### Origin Servers
+
+`initial_origin` preserves the bootstrap input on the application resource. Ongoing origin-pool ownership belongs to `fortiappseccloud_waf_origin_servers`. Existing remote origin servers remain in place during the core migration.
+
+To manage them afterward, declare the complete current remote server list, import the application endpoint ID, and verify a zero-change plan:
+
+```shell
+terraform import fortiappseccloud_waf_origin_servers.example '<ep_id>'
+terraform plan -detailed-exitcode
+```
+
+Do not declare a partial origin list: this resource owns the complete server pool.
+
+### Other v2 Resources
+
+Resources introduced in v2 are not automatically added to state. Add and import them one at a time, following each resource's import documentation. Require a zero-change plan before treating an existing remote configuration as Terraform-managed. Pay particular attention to resources that own complete ordered lists.
+
+Read the [WAF configuration and import guidance](waf_configuration_guidance.html) before adopting app modules. Removing an imported app-module resource can invoke its destroy behavior and disable the live module.
+
+## Troubleshooting
+
+### Terraform proposes replacing the application
+
+Stop and compare `app_name`, `domain_name`, `platform`, placement, and `initial_origin` with the original application. These identity and bootstrap fields are replacement-only.
+
+### OpenAPI validation reports a file error or upload
+
+Restore the referenced documents and their original path strings. Relative paths must resolve from the same Terraform working directory used for the plan.
+
+### A legacy application name is not unique
+
+The first state refresh resolves legacy identity to `ep_id`. If the application name is ambiguous, do not edit the state file. Back up state, identify the correct endpoint ID, and use the resource import procedure or contact FortiAppSecCloud Support before continuing.
+
+### The state uses the private provider address
+
+Return to the [private-provider migration guide](fortiwebcloud_migration.html), complete its v1.0.5 migration, and then resume this guide.
+
+## Rollback
+
+Before the refresh-only plan is applied, rollback consists of restoring the v1.0.5 configuration and dependency lock file. After upgraded state has been written, an older provider might not understand the new schema. Restore the protected state backup through the backend's normal recovery mechanism before selecting v1.0.5 again. Avoid forced state pushes unless directed by an established recovery procedure or FortiAppSecCloud Support.
+
+Migration is complete when the v2 normal plan exits with code `0`, outputs use the v2 attribute names, and any separately adopted resources also produce zero-change plans. After that gate passes, the exact provider constraint can be changed to the version policy used by your organization, such as `~> 2.0`.
+
+## Legacy Provider Code Removal in v2.1
+
+The v1.0.5 SDKv2 provider implementation is retained in v2.0 only to support automatic state upgrade. It is not used by the Framework provider that v2 serves, and it does not affect the day-to-day operation of upgraded configurations.
+
+This legacy code is scheduled for **complete removal in v2.1.0 and later**. Removal is safe for any configuration that has already completed the migration above: state upgrade is performed by the Framework provider's built-in upgraders, which do not depend on the legacy SDKv2 code. No action is required from users who have finished migrating.
+
+Users still running v1.0.5 should complete this migration guide before upgrading to v2.1.0 or later. A v2.1 release cannot upgrade state that was never refreshed by a v2.0 provider; finish the v2.0 migration first so the built-in upgraders run while the legacy code path is still available as a fallback.

@@ -1,0 +1,17 @@
+{
+  "id": "legacy-demo",
+  "app_name": "legacy-demo",
+  "domain_name": "legacy.example.com",
+  "extra_domains": ["api.legacy.example.com"],
+  "app_service": {"http": 80, "https": 443},
+  "origin_server_ip": "192.0.2.10",
+  "origin_server_service": "HTTPS",
+  "origin_server_port": 443,
+  "cdn": false,
+  "continent_cdn": false,
+  "continent": null,
+  "block": true,
+  "template": "legacy-template",
+  "cname": "[\"legacy.edge.example\"]",
+  "ep_id": null
+}

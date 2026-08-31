@@ -1,0 +1,19 @@
+// {{.Marker}}
+
+package waf
+
+import (
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+
+	"terraform-provider-fortiappseccloud/internal/locking"
+)
+
+// Resources returns the generated app- and template-scoped WAF resources.
+func Resources(locks *locking.Registry) []func() resource.Resource {
+	return []func() resource.Resource{
+		{{- range sortedResources .}}
+		func() resource.Resource { return New{{.GoName}}Resource(locks) },
+		func() resource.Resource { return NewTemplate{{.GoName}}Resource(locks) },
+		{{- end}}
+	}
+}

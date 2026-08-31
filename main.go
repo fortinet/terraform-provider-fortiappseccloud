@@ -1,12 +1,23 @@
 package main
 
 import (
-	"terraform-provider-fortiappseccloud/fortiappseccloud"
+	"context"
+	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+
+	frameworkprovider "terraform-provider-fortiappseccloud/internal/provider"
+)
+
+const providerAddress = "registry.terraform.io/fortinet/fortiappseccloud"
+
+var (
+	version = "dev"
+	commit  = "unknown"
 )
 
 func main() {
-	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: fortiappseccloud.Provider})
+	if err := providerserver.Serve(context.Background(), frameworkprovider.New(version, commit), providerserver.ServeOpts{Address: providerAddress, ProtocolVersion: 5}); err != nil {
+		log.Fatalf("serve provider: %v", err)
+	}
 }

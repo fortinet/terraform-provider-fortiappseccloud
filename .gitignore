@@ -6,3 +6,10 @@
 *.backup
 ./*.tfstate
 terraform.tfstate
+.claude/*
+.codex/*
+*.txt
+
+# Internal-only documents; not part of the public release.
+architecture.md
+CLAUDE.md

@@ -31,7 +31,8 @@ builds:
       goarch: '386'
   binary: '{{ .ProjectName }}_v{{ .Version }}'
 archives:
-- format: zip
+- formats:
+    - zip
   name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 checksum:
   extra_files:
@@ -58,4 +59,7 @@ release:
   # If you want to manually examine the release before its live, uncomment this line:
   # draft: true
 changelog:
-  disable: true
+  # GitHub supplies the pull-request list, contributors, and comparison link.
+  # The release workflow separately extracts the matching CHANGELOG.md section
+  # and passes it to GoReleaser as the curated release header.
+  use: github-native

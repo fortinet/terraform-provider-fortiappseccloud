@@ -1,0 +1,7 @@
+{
+  "id": "legacy-demo",
+  "app_name": "legacy-demo",
+  "action": "alert_deny",
+  "enable": true,
+  "validation_files": []
+}

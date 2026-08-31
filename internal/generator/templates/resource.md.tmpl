@@ -1,0 +1,52 @@
+---
+page_title: "{{.Resource.Docs.PageTitle}}"
+subcategory: "WAF"
+description: |-
+  {{.Resource.Docs.Description}}
+---
+
+<!-- {{.Marker}} -->
+
+# {{.Resource.TerraformName}}
+
+Configures {{.Resource.OperationName}} for one FortiAppSec Cloud application using the static app endpoint `{{.Resource.GetPath}}`. Set `template = false` and provide `configs` to manage settings directly. Set `template = true` and omit `configs` to inherit this module from the application's attached WAF template.
+
+Declare only one `{{.Resource.TerraformName}}` resource for an application endpoint. Template-level settings are managed by `fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}}`.
+
+## Example Usage
+
+```hcl
+{{.Resource.Docs.ExampleHCL -}}
+```
+{{- if .Resource.Docs.ConfigurationNotes}}
+
+## Configuration Notes
+
+{{.Resource.Docs.ConfigurationNotes}}
+{{- end}}
+
+## Argument Reference
+
+{{.Resource.Docs.ArgumentText}}
+
+## Import
+
+Import using the application `ep_id`:
+
+```shell
+{{.Resource.Docs.ImportCommand}}
+```
+
+The first read after import hydrates all ownership wrappers when `template = false`.
+
+## Destroy Behavior
+
+{{- if .Resource.DestroyDisables}}
+Destroy performs a fresh GET, preserves the complete response, sets `template=false` and `configs.status=false`, sends the complete PUT, and verifies the normalized GET response before Terraform removes the resource from state.
+{{- else if .Resource.TemplateDestroyCoupledFields}}
+Destroy forgets this app-scoped resource without sending a disabling PUT. The remote application {{.Resource.OperationName}} configuration remains unchanged and Terraform emits a warning. This behavior does not apply to `fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}}`, which disables the template module by setting its reviewed top-level, cache, and compression statuses false together.
+{{- else if .Resource.TemplateDestroyDisables}}
+Destroy forgets this app-scoped resource without sending a disabling PUT. The remote application {{.Resource.OperationName}} configuration remains unchanged and Terraform emits a warning. This behavior does not apply to `fortiappseccloud_waf_template_{{.Resource.TypeNameSuffix | trimWAFPrefix}}`, which disables the template module before Terraform removes it from state.
+{{- else}}
+Destroy forgets this resource without sending a disabling PUT. The remote {{.Resource.OperationName}} configuration remains unchanged and Terraform emits a warning.
+{{- end}}

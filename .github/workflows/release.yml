@@ -25,6 +25,13 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - name: Test release-note extraction
+        run: ./scripts/extract-release-header_test.sh
+      - name: Prepare curated release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_HEADER: ${{ runner.temp }}/release-header.md
+        run: ./scripts/extract-release-header.sh "$RELEASE_TAG" CHANGELOG.md "$RELEASE_HEADER"
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@cb9bde2e2525e640591a934b1fd28eef1dcaf5e5 # v6.2.0
         id: import_gpg
@@ -34,7 +41,8 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@9ed2f89a662bf1735a48bc8557fd212fa902bebf # v6.1.0
         with:
-          args: release --clean
+          version: '~> v2'
+          args: release --clean --release-header=${{ runner.temp }}/release-header.md
         env:
           # GitHub sets the GITHUB_TOKEN secret automatically.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

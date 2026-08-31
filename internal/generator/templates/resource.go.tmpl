@@ -1,0 +1,3568 @@
+// {{.Marker}}
+
+package waf
+
+import (
+	{{.Resource.ImportBlock}}
+)
+
+const (
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{- if .MaxItemsVar}}
+	{{.MaxItemsVar}} = {{.MaxItems}}
+	{{- end}}
+	{{- range .Item.Fields}}
+	{{- if .SubItemArray}}
+	{{- if .SubItemArray.MaxItemsVar}}
+	{{.SubItemArray.MaxItemsVar}} = {{.SubItemArray.MaxItems}}
+	{{- end}}
+	{{- end}}
+	{{- if .ItemScalarStringArray}}
+	{{- if .ItemScalarStringArray.MaxItemsVar}}
+	{{.ItemScalarStringArray.MaxItemsVar}} = {{.ItemScalarStringArray.MaxItems}}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{- if .MaxItemsVar}}
+	{{.MaxItemsVar}} = {{.MaxItems}}
+	{{- end}}
+	{{- end}}
+)
+
+{{$r := .Resource}}
+var (
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{- range .Item.Fields}}
+	{{- if .PatternVar}}
+	{{.PatternVar}} = regexp.MustCompile(`{{.Pattern}}`)
+	{{- end}}
+	{{- if .EnumMap}}
+	{{.EnumMap}} = map[string]struct{}{
+		{{- range .Enum}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	{{- end}}
+	{{- range .ObjectFields}}
+	{{- if .EnumMap}}
+	{{.EnumMap}} = map[string]struct{}{
+		{{- range .Enum}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+	{{- if .SubItemArray}}
+	{{- range .SubItemArray.Fields}}
+	{{- if .PatternVar}}
+	{{.PatternVar}} = regexp.MustCompile(`{{.Pattern}}`)
+	{{- end}}
+	{{- if .EnumMap}}
+	{{.EnumMap}} = map[string]struct{}{
+		{{- range .Enum}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.Scalars}}
+	{{- if .PatternVar}}
+	{{.PatternVar}} = regexp.MustCompile(`{{.Pattern}}`)
+	{{- end}}
+	{{- if .EnumMap}}
+	{{- if .IsIntEnum}}
+	{{.EnumMap}} = map[int64]struct{}{
+		{{- range .Enum}}
+		{{.}}: {},
+		{{- end}}
+	}
+	{{- else}}
+	{{.EnumMap}} = map[string]struct{}{
+		{{- range .Enum}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{- if .EnumMap}}
+	{{.EnumMap}} = map[string]struct{}{
+		{{- range .Enum}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+
+	{{- if .Resource.UsesSharedItemSchema}}
+	{{$r.LowerCamel}}ItemAttributeTypes = map[string]attr.Type{
+		{{- range .Resource.SharedItemFields}}
+		"{{.Name}}": {{.AttrType}},
+		{{- end}}
+	}
+	{{$r.LowerCamel}}WrapperAttributeTypes = map[string]attr.Type{
+		"item": types.ListType{ElemType: types.ObjectType{AttrTypes: {{$r.LowerCamel}}ItemAttributeTypes}},
+	}
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{.ItemAttributeTypes}} = map[string]attr.Type{
+		{{- range .Item.Fields}}
+		"{{.Name}}": {{.AttrType}},
+		{{- end}}
+	}
+	{{.WrapperAttributeTypes}} = map[string]attr.Type{
+		"item": types.ListType{ElemType: types.ObjectType{AttrTypes: {{.ItemAttributeTypes}}}},
+	}
+	{{- range .Item.Fields}}
+	{{- if .ObjectAttrTypes}}
+	{{.ObjectAttrTypes}} = map[string]attr.Type{
+		{{- range .ObjectFields}}
+		"{{.Name}}": {{.AttrType}},
+		{{- end}}
+	}
+	{{$coll.CodecPrefix}}{{.GoName}}KnownKeys = map[string]struct{}{
+		{{- range .ObjectKnownKeys}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+	{{- range .Item.Fields}}
+	{{- if .SubItemArray}}
+	{{$sub := .SubItemArray}}
+	{{$sub.ItemAttributeTypes}} = map[string]attr.Type{
+		{{- range $sub.Fields}}
+		"{{.Name}}": {{.AttrType}},
+		{{- end}}
+	}
+	{{$sub.WrapperAttributeTypes}} = map[string]attr.Type{
+		"item": types.ListType{ElemType: types.ObjectType{AttrTypes: {{$sub.ItemAttributeTypes}}}},
+	}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.LocalName}}ItemAttributeTypes = map[string]attr.Type{
+		"{{.ItemAttribute}}": types.StringType,
+	}
+	{{.LocalName}}WrapperAttributeTypes = map[string]attr.Type{
+		"item": types.ListType{ElemType: types.ObjectType{AttrTypes: {{.LocalName}}ItemAttributeTypes}},
+	}
+	{{- end}}
+	{{$r.LowerCamel}}ConfigAttributeTypes = map[string]attr.Type{
+		{{- range .Resource.Scalars}}
+		"{{.Name}}": {{.AttrType}},
+		{{- end}}
+		{{- range .Resource.Collections}}
+{{$coll := .}}
+		"{{.WireName}}": types.ObjectType{AttrTypes: {{.WrapperAttributeTypes}}},
+		{{- end}}
+		{{- range .Resource.ScalarStringArrays}}
+		"{{.WireName}}": types.ObjectType{AttrTypes: {{.LocalName}}WrapperAttributeTypes},
+		{{- end}}
+	}
+	{{- range .Resource.Scalars}}
+	{{- if eq .Kind "object"}}
+	{{.ObjectAttrTypes}} = map[string]attr.Type{
+		{{- range .ObjectFields}}
+		"{{.Name}}": {{.AttrType}},
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+)
+
+type {{$r.LowerCamel}}ResourceModel struct {
+	EPID     types.String `tfsdk:"ep_id"`
+	Template types.Bool   `tfsdk:"template"`
+	Configs  types.Object `tfsdk:"configs"`
+}
+
+type {{$r.LowerCamel}}ConfigsModel struct {
+	{{- range .Resource.Scalars}}
+	{{.GoName}} {{.GoType}} `tfsdk:"{{.Name}}"`
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{.GoName}} types.Object `tfsdk:"{{.WireName}}"`
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.GoName}} types.Object `tfsdk:"{{.WireName}}"`
+	{{- end}}
+}
+
+type {{$r.LowerCamel}}WrapperModel struct {
+	Items types.List `tfsdk:"item"`
+}
+
+{{- if .Resource.UsesSharedItemSchema}}
+type {{$r.LowerCamel}}ItemModel struct {
+	{{- range .Resource.SharedItemFields}}
+	{{.GoName}} {{.GoType}} `tfsdk:"{{.Name}}"`
+	{{- end}}
+}
+
+type {{$r.LowerCamel}}WireItem struct {
+	{{- if not (index .Resource.Collections 0).Unindexed}}
+	{{- if eq (index .Resource.Collections 0).IdxKind "string"}}
+	Index {{$r.LowerCamel}}Idx `json:"idx"`
+	{{- else}}
+	Index int `json:"idx"`
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.SharedItemFields}}
+	{{- if eq .Kind "boolean"}}
+	{{.GoName}} bool `json:"{{.WireName}}"`
+	{{- else if .Required}}
+	{{.GoName}} string `json:"{{.WireName}}"`
+	{{- else}}
+	{{.GoName}} *string `json:"{{.WireName}},omitempty"`
+	{{- end}}
+	{{- end}}
+}
+
+type {{$r.LowerCamel}}OwnedList struct {
+	Set   bool
+	Items []{{$r.LowerCamel}}WireItem
+}
+{{- end}}
+
+{{- range .Resource.Collections}}
+{{$coll := .}}
+type {{.CodecPrefix}}ItemModel struct {
+	{{- range .Item.Fields}}
+	{{.GoName}} {{.GoType}} `tfsdk:"{{.Name}}"`
+	{{- end}}
+}
+
+{{- range .Item.Fields}}
+{{- if .ObjectFields}}
+type {{$coll.CodecPrefix}}{{.GoName}}ObjectModel struct {
+	{{- range .ObjectFields}}
+	{{.GoName}} {{.GoType}} `tfsdk:"{{.Name}}"`
+	{{- end}}
+}
+{{- end}}
+{{- end}}
+
+type {{.CodecPrefix}}WireItem struct {
+	{{- if not .Unindexed}}
+	{{- if eq .IdxKind "string"}}
+	Index {{$r.LowerCamel}}Idx `json:"idx"`
+	{{- else}}
+	Index int `json:"idx"`
+	{{- end}}
+	{{- end}}
+	{{- range .Item.Fields}}
+	{{- if eq .Kind "boolean"}}
+	{{.GoName}} bool `json:"{{.WireName}}"`
+	{{- else if eq .Kind "integer"}}
+	{{.GoName}} int64 `json:"{{.WireName}}"`
+	{{- else if eq .Kind "object"}}
+	{{.GoName}} *{{$coll.CodecPrefix}}{{.GoName}}Wire `json:"{{.WireName}}"`
+	{{- else if eq .Kind "array"}}
+	{{.GoName}} json.RawMessage `json:"{{.WireName}},omitempty"`
+	{{- else if eq .Kind "string_array"}}
+	{{.GoName}} json.RawMessage `json:"{{.WireName}},omitempty"`
+	{{- else if .Required}}
+	{{.GoName}} string `json:"{{.WireName}}"`
+	{{- else}}
+	{{.GoName}} *string `json:"{{.WireName}},omitempty"`
+	{{- end}}
+	{{- end}}
+}
+
+{{- if or (.Item.Fields | hasSubItemArray) (.Item.Fields | hasItemStringArray)}}
+// {{$coll.CodecPrefix}}MatchGetItem finds the unique unconsumed fresh-GET item
+// whose "unchanged projection" equals the patch item's projection, returning
+// the matching raw GET item and its index. The projection is the canonical
+// content of every known parent field EXCEPT the wire-only idx and the nested
+// ownership fields (array / string_array / object) — i.e. the scalar fields the
+// user controls. There is no proven stable identity field (idx is regenerated
+// sequentially; cat/name are not unique identifiers), so preservation matches
+// by unchanged content, not identity. A unique unconsumed match is required:
+// zero or multiple matches return false so the caller can fail closed (omission
+// means preserve; an ambiguous or changed/new item cannot be matched safely).
+// The caller tracks consumed indices so one remote item cannot satisfy two
+// patch items. The comparison marshals the projection maps to JSON (Go sorts
+// map keys), so byte-equality is a stable canonical check.
+func {{$coll.CodecPrefix}}MatchGetItem(item {{.CodecPrefix}}WireItem, getItems []map[string]json.RawMessage, consumed map[int]bool) (map[string]json.RawMessage, int, bool) {
+	patchJSON, err := json.Marshal(item)
+	if err != nil {
+		return nil, -1, false
+	}
+	var patchMap map[string]json.RawMessage
+	if err := json.Unmarshal(patchJSON, &patchMap); err != nil {
+		return nil, -1, false
+	}
+	// The wire-only idx (present in the raw GET item; regenerated sequentially
+	// on write) is not part of the unchanged projection; strip it along with
+	// the nested-array/object fields.
+	delete(patchMap, "idx")
+	{{- range .Item.Fields}}
+	{{- if or (eq .Kind "array") (eq .Kind "string_array") (eq .Kind "object")}}
+	delete(patchMap, "{{.WireName}}")
+	{{- end}}
+	{{- if .ComputedOnly}}
+	delete(patchMap, "{{.WireName}}")
+	{{- end}}
+	{{- end}}
+	// Canonicalize scalar fields using each field's reviewed default semantics:
+	// a scalar whose value equals its reviewed default is equivalent to an
+	// absent field, so drop default-valued scalars from the projection on both
+	// sides. This makes an unchanged item match whether the backend sent the
+	// default explicitly or omitted it (e.g. known_bots status default true,
+	// parameter_validation block_period default 60, rewriting protocol HTTP).
+	{{- range .Item.Fields}}
+	{{- if eq .Kind "boolean"}}
+	if bytes.Equal(bytes.TrimSpace(patchMap["{{.WireName}}"]), []byte("{{providerBoolDefault .ProviderDefaultBool}}")) {
+		delete(patchMap, "{{.WireName}}")
+	}
+	{{- else if eq .Kind "integer"}}
+	if bytes.Equal(bytes.TrimSpace(patchMap["{{.WireName}}"]), []byte("{{providerIntDefault .ProviderDefaultInt}}")) {
+		delete(patchMap, "{{.WireName}}")
+	}
+	{{- else if eq .Kind "string"}}
+	if bytes.Equal(bytes.TrimSpace(patchMap["{{.WireName}}"]), []byte({{providerStringDefaultJSON .ProviderDefaultString}})) {
+		delete(patchMap, "{{.WireName}}")
+	}
+	{{- end}}
+	{{- end}}
+	patchSig, err := json.Marshal(patchMap)
+	if err != nil {
+		return nil, -1, false
+	}
+	var match map[string]json.RawMessage
+	matchIndex := -1
+	matches := 0
+	for gi, get := range getItems {
+		if consumed[gi] {
+			continue
+		}
+		getMap := make(map[string]json.RawMessage, len(get))
+		for k, v := range get {
+			getMap[k] = v
+		}
+		delete(getMap, "idx")
+		{{- range .Item.Fields}}
+		{{- if or (eq .Kind "array") (eq .Kind "string_array") (eq .Kind "object")}}
+		delete(getMap, "{{.WireName}}")
+		{{- end}}
+		{{- if .ComputedOnly}}
+		delete(getMap, "{{.WireName}}")
+		{{- end}}
+		{{- end}}
+		{{- range .Item.Fields}}
+		{{- if eq .Kind "boolean"}}
+		if bytes.Equal(bytes.TrimSpace(getMap["{{.WireName}}"]), []byte("{{providerBoolDefault .ProviderDefaultBool}}")) {
+			delete(getMap, "{{.WireName}}")
+		}
+		{{- else if eq .Kind "integer"}}
+		if bytes.Equal(bytes.TrimSpace(getMap["{{.WireName}}"]), []byte("{{providerIntDefault .ProviderDefaultInt}}")) {
+			delete(getMap, "{{.WireName}}")
+		}
+		{{- else if eq .Kind "string"}}
+		if bytes.Equal(bytes.TrimSpace(getMap["{{.WireName}}"]), []byte({{providerStringDefaultJSON .ProviderDefaultString}})) {
+			delete(getMap, "{{.WireName}}")
+		}
+		{{- end}}
+		{{- end}}
+		getSig, err := json.Marshal(getMap)
+		if err != nil {
+			continue
+		}
+		if bytes.Equal(patchSig, getSig) {
+			match = get
+			matchIndex = gi
+			matches++
+		}
+	}
+	if matches != 1 {
+		return nil, -1, false
+	}
+	return match, matchIndex, true
+}
+{{- end}}
+
+{{- range .Item.Fields}}
+{{- if .ObjectFields}}
+type {{$coll.CodecPrefix}}{{.GoName}}Wire struct {
+	{{- range .ObjectFields}}
+	{{- if eq .Kind "boolean"}}
+	{{.GoName}} bool `json:"{{.WireName}}"`
+	{{- else if eq .Kind "integer"}}
+	{{.GoName}} int64 `json:"{{.WireName}}"`
+	{{- else}}
+	{{.GoName}} string `json:"{{.WireName}},omitempty"`
+	{{- end}}
+	{{- end}}
+}
+{{- end}}
+{{- end}}
+
+{{- range .Item.Fields}}
+{{- if .SubItemArray}}
+{{$sub := .SubItemArray}}
+type {{$sub.CodecPrefix}}ItemModel struct {
+	{{- range $sub.Fields}}
+	{{.GoName}} {{.GoType}} `tfsdk:"{{.Name}}"`
+	{{- end}}
+}
+
+type {{$sub.CodecPrefix}}WireItem struct {
+	Index int `json:"idx"`
+	{{- range $sub.Fields}}
+	{{- if eq .Kind "boolean"}}
+	{{.GoName}} bool `json:"{{.WireName}}"`
+	{{- else if eq .Kind "integer"}}
+	{{.GoName}} int64 `json:"{{.WireName}}"`
+	{{- else if .Required}}
+	{{.GoName}} string `json:"{{.WireName}}"`
+	{{- else}}
+	{{.GoName}} *string `json:"{{.WireName}},omitempty"`
+	{{- end}}
+	{{- end}}
+}
+{{- end}}
+{{- if .ItemScalarStringArray}}
+{{$iso := .ItemScalarStringArray}}
+type {{$iso.CodecPrefix}}ItemModel struct {
+	{{$iso.ItemGoName}} types.String `tfsdk:"{{$iso.ItemAttribute}}"`
+}
+
+var {{$iso.ItemAttributeTypes}} = map[string]attr.Type{
+	"{{$iso.ItemAttribute}}": types.StringType,
+}
+
+var {{$iso.WrapperAttributeTypes}} = map[string]attr.Type{
+	"item": types.ListType{ElemType: types.ObjectType{AttrTypes: {{$iso.ItemAttributeTypes}}}},
+}
+
+type {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList struct {
+	Set   bool
+	Items []string
+}
+{{- end}}
+{{- end}}
+
+type {{.CodecPrefix}}OwnedList struct {
+	Set   bool
+	Items []{{.CodecPrefix}}WireItem
+}
+{{- end}}
+
+{{- range .Resource.ScalarStringArrays}}
+type {{.LocalName}}ItemModel struct {
+	{{.ItemGoName}} types.String `tfsdk:"{{.ItemAttribute}}"`
+}
+
+type {{.LocalName}}OwnedList struct {
+	Set   bool
+	Items []string
+}
+{{- end}}
+
+type {{$r.LowerCamel}}Patch struct {
+	{{- range .Resource.Scalars}}
+	{{.GoName}} client.Optional[{{.PatchType}}]
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{.GoName}} {{.CodecPrefix}}OwnedList
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.GoName}} {{.LocalName}}OwnedList
+	{{- end}}
+}
+
+type {{$r.LowerCamel}}Codec struct{}
+
+type {{$r.OwnershipStruct}} struct {
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{.GoName}} bool
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.GoName}} bool
+	{{- end}}
+	{{- range .Resource.Scalars}}
+	{{- if eq .Kind "object"}}
+	{{.GoName}} bool
+	{{- end}}
+	{{- end}}
+}
+
+type {{$r.ScalarsStruct}} struct {
+	{{- range .Resource.Scalars}}
+	{{.GoName}} {{.WireType}}
+	{{- end}}
+}
+
+{{- if $r.HasFilter}}
+type {{$r.LowerCamel}}DefaultFalseModifier struct{}
+{{- end}}
+{{- if $r.HasDefaultTrue}}
+type {{$r.LowerCamel}}DefaultTrueModifier struct{}
+{{- end}}
+{{- if $r.HasClearStrings}}
+type {{$r.LowerCamel}}ClearStringModifier struct{}
+{{- end}}
+
+var (
+	_ wafmodule.Codec         = {{$r.LowerCamel}}Codec{}
+	_ wafmodule.TemplateCodec = {{$r.LowerCamel}}Codec{}
+)
+
+// New{{$r.GoName}}Resource creates the generated app-scoped {{$r.OperationName}} resource.
+func New{{$r.GoName}}Resource(locks *locking.Registry) resource.Resource {
+	return wafmodule.NewResource({{$r.LowerCamel}}Descriptor(), locks)
+}
+
+// NewTemplate{{$r.GoName}}Resource creates the generated template-scoped {{$r.OperationName}} resource.
+func NewTemplate{{$r.GoName}}Resource(locks *locking.Registry) resource.Resource {
+	return wafmodule.NewTemplateResource({{$r.LowerCamel}}TemplateDescriptor(), locks)
+}
+
+func {{$r.LowerCamel}}Descriptor() wafmodule.Descriptor {
+	return wafmodule.Descriptor{
+		TypeNameSuffix: "{{$r.TypeNameSuffix}}",
+		Endpoint: client.WAFModuleEndpoint{
+			Path:      "{{$r.GetPath}}",
+			Operation: "{{$r.OperationName}}",
+		},
+		Codec: {{$r.LowerCamel}}Codec{},
+		Destroy: wafmodule.DestroyPolicy{
+			Mode:     wafmodule.Destroy{{$r.DestroyModeGo}},
+			Verified: {{$r.DestroyVerified}},
+			Field:    "{{$r.DestroyField}}",
+			Reason:   "{{$r.DestroyReason}}",
+		},
+	}
+}
+
+func {{$r.LowerCamel}}TemplateDescriptor() wafmodule.TemplateDescriptor {
+	return wafmodule.TemplateDescriptor{
+		TypeNameSuffix: "waf_template_{{trimWAFPrefix $r.TypeNameSuffix}}",
+		Endpoint: client.WAFTemplateModuleEndpoint{
+			Path:      "{{$r.TemplateGetPath}}",
+			Operation: "{{$r.OperationName}}",
+		},
+		Codec: {{$r.LowerCamel}}Codec{},
+		Destroy: wafmodule.DestroyPolicy{
+			Mode:     wafmodule.Destroy{{$r.TemplateDestroyModeGo}},
+			Verified: {{$r.TemplateDestroyVerified}},
+			Field:    "{{$r.TemplateDestroyField}}",
+			{{- if $r.TemplateDestroyCoupledFields}}
+			CoupledFields: []string{
+				{{- range $r.TemplateDestroyCoupledFields}}
+				{{printf "%q" .}},
+				{{- end}}
+			},
+			{{- end}}
+			Reason:   "{{$r.TemplateDestroyReason}}",
+		},
+	}
+}
+
+func ({{$r.LowerCamel}}Codec) Schema(context.Context) schema.Schema {
+	{{- if $r.NeedsStringStateModifier}}
+	stringStateModifier := []planmodifier.String{stringplanmodifier.UseStateForUnknown()}
+	{{- end}}
+	{{- if $r.NeedsBoolStateModifier}}
+	boolStateModifier := []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()}
+	{{- end}}
+	{{- if $r.NeedsInt64StateModifier}}
+	int64StateModifier := []planmodifier.Int64{int64planmodifier.UseStateForUnknown()}
+	{{- end}}
+	{{- if $r.HasCollections}}
+	ownershipWrapper := func(name string, maxItems int, unindexed bool, attributes map[string]schema.Attribute, blocks map[string]schema.Block) schema.SingleNestedBlock {
+		orderDesc := "Complete ordered {{$r.OperationName}} " + name + " items. Terraform order controls generated one-based indices."
+		if unindexed {
+			orderDesc = "Complete ordered {{$r.OperationName}} " + name + " items in Terraform order. This collection has no positional idx."
+		}
+		boundedItemBlock := schema.ListNestedBlock{
+			MarkdownDescription: orderDesc,
+			NestedObject: schema.NestedBlockObject{
+				Attributes: attributes,
+				Blocks:     blocks,
+			},
+		}
+		if maxItems > 0 {
+			boundedItemBlock.Validators = []validator.List{listvalidator.SizeAtMost(maxItems)}
+		}
+		return schema.SingleNestedBlock{
+			MarkdownDescription: "Optional " + name + " ownership wrapper. Omit it to preserve the raw remote array; use an empty wrapper to replace the array with [].",
+			Blocks: map[string]schema.Block{
+				"item": boundedItemBlock,
+			},
+		}
+	}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.LocalName}}ItemBlock := schema.ListNestedBlock{
+		MarkdownDescription: "Allowed {{$r.OperationName}} {{.WireName}} string values in Terraform order.",
+		{{- if .MaxItemsVar}}
+		Validators: []validator.List{listvalidator.SizeAtMost({{.MaxItemsVar}})},
+		{{- end}}
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"{{.ItemAttribute}}": schema.StringAttribute{
+					Required:            true,
+					MarkdownDescription: {{if .Enum}}"One of the reviewed {{.WireName}} enum values."{{else}}"A reviewed string value."{{end}},
+					{{- if .Enum}}
+					Validators:          []validator.String{stringvalidator.OneOf({{enumOneOfArgs .Enum}})},
+					{{- end}}
+				},
+			},
+		},
+	}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.LocalName}}Wrapper := schema.SingleNestedBlock{
+		MarkdownDescription: "Optional {{.WireName}} ownership wrapper. Omit it to preserve the raw remote array; use an empty wrapper to replace the array with [].",
+		Blocks: map[string]schema.Block{
+			"item": {{.LocalName}}ItemBlock,
+		},
+	}
+	{{- end}}
+
+	return schema.Schema{
+		MarkdownDescription: "Manages app-level FortiAppSec Cloud {{$r.OperationName}}. {{if $r.DestroyDisables}}Destroy disables the remote module with a preserving GET-merge-PUT-GET lifecycle.{{else}}Destroy forgets state without changing the remote module.{{end}}",
+		Attributes: map[string]schema.Attribute{
+			"ep_id": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "Application endpoint ID and import identifier.",
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			},
+			"template": schema.BoolAttribute{
+				Required:            true,
+				MarkdownDescription: "Whether effective {{$r.OperationName}} configuration is inherited from the attached template.",
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"configs": schema.SingleNestedBlock{
+				MarkdownDescription: "Locally managed {{$r.OperationName}} configuration. Required when template is false and omitted when template is true.",
+				Attributes: map[string]schema.Attribute{
+					{{- range .Resource.Scalars}}
+					{{- if not (eq .Kind "object")}}
+					"{{.Name}}": {{.SchemaExpr}},
+					{{- end}}
+					{{- end}}
+				},
+				Blocks: map[string]schema.Block{
+					{{- range .Resource.Scalars}}
+					{{- if eq .Kind "object"}}
+					"{{.Name}}": {{.SchemaExpr}},
+					{{- end}}
+					{{- end}}
+					{{- range .Resource.Collections}}
+{{$coll := .}}
+					"{{.WireName}}": ownershipWrapper("{{.WireName}}", {{.MaxItems}}, {{.Unindexed}}, map[string]schema.Attribute{
+						{{- range .Item.Fields}}
+						{{- if and (not .ObjectFields) (not .SubItemArray) (not .ItemScalarStringArray)}}
+						"{{.Name}}": {{.SchemaExpr}},
+						{{- end}}
+						{{- end}}
+					}, map[string]schema.Block{
+						{{- range .Item.Fields}}
+						{{- if or .ObjectFields (or .SubItemArray .ItemScalarStringArray)}}
+						"{{.Name}}": {{.SchemaExpr}},
+						{{- end}}
+						{{- end}}
+					}),
+					{{- end}}
+					{{- range .Resource.ScalarStringArrays}}
+					"{{.WireName}}": {{.LocalName}}Wrapper,
+					{{- end}}
+				},
+			},
+		},
+	}
+}
+
+func ({{$r.LowerCamel}}Codec) ValidateConfig(ctx context.Context, config tfsdk.Config) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	var model {{$r.LowerCamel}}ResourceModel
+	diagnostics.Append(config.Get(ctx, &model)...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	return ({{$r.LowerCamel}}Codec{}).validateConfigs(ctx, model.Configs, diagnostics)
+}
+
+func ({{$r.LowerCamel}}Codec) ValidateTemplateConfig(ctx context.Context, config tfsdk.Config) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	var model wafmodule.TemplateModel
+	diagnostics.Append(config.Get(ctx, &model)...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	return ({{$r.LowerCamel}}Codec{}).validateConfigs(ctx, model.Configs, diagnostics)
+}
+
+func ({{$r.LowerCamel}}Codec) validateConfigs(ctx context.Context, configs types.Object, diagnostics diag.Diagnostics) diag.Diagnostics {
+	if configs.IsNull() || configs.IsUnknown() {
+		return diagnostics
+	}
+	var values {{$r.LowerCamel}}ConfigsModel
+	diagnostics.Append(configs.As(ctx, &values, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	{{- if $r.CrossFieldRules}}
+	diagnostics.Append({{$r.LowerCamel}}ValidateConfiguredCrossFields(values)...)
+	{{- end}}
+	{{- range .Resource.Scalars}}
+	{{- if .EnumMap}}
+	{{- if .IsIntEnum}}
+	if !values.{{.GoName}}.IsNull() && !values.{{.GoName}}.IsUnknown() && !{{.EnumValid}}(values.{{.GoName}}.ValueInt64()) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.Name}}", "{{.Name}} must be one of {{enumProse .Enum}}.")
+	}
+	{{- else}}
+	if !values.{{.GoName}}.IsNull() && !values.{{.GoName}}.IsUnknown() && !{{.EnumValid}}(values.{{.GoName}}.ValueString()) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.Name}}", "{{.Name}} must be one of {{enumProse .Enum}}.")
+	}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	diagnostics.Append({{$r.LowerCamel}}ValidateConfigured{{.GoName}}(ctx, values.{{.GoName}})...)
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	diagnostics.Append({{$r.LowerCamel}}ValidateConfigured{{.GoName}}(ctx, values.{{.GoName}})...)
+	{{- end}}
+	return diagnostics
+}
+
+{{- if $r.CrossFieldRules}}
+func {{$r.LowerCamel}}ValidateConfiguredCrossFields(values {{$r.LowerCamel}}ConfigsModel) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	{{- range $r.CrossFieldRules}}
+	if {{.ConfiguredGuardPrefix}}({{.ConfiguredViolation}}) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} cross-field configuration", "{{.Message}}")
+	}
+	{{- end}}
+	return diagnostics
+}
+
+func {{$r.LowerCamel}}ValidateDecodedCrossFields(values {{$r.ScalarsStruct}}) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	{{- range $r.CrossFieldRules}}
+	if {{.DecodedGuardPrefix}}({{.DecodedViolation}}) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result violated the cross-field rule: {{.Message}}")
+	}
+	{{- end}}
+	return diagnostics
+}
+{{- end}}
+
+func ({{$r.LowerCamel}}Codec) BuildPatch(ctx context.Context, config tfsdk.Config, plan tfsdk.Plan, _ tfsdk.State) (wafmodule.Patch, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	var configured, planned {{$r.LowerCamel}}ResourceModel
+	diagnostics.Append(config.Get(ctx, &configured)...)
+	diagnostics.Append(plan.Get(ctx, &planned)...)
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	return ({{$r.LowerCamel}}Codec{}).buildConfigsPatch(ctx, configured.Configs, planned.Configs, diagnostics)
+}
+
+func ({{$r.LowerCamel}}Codec) BuildTemplatePatch(ctx context.Context, config tfsdk.Config, plan tfsdk.Plan, _ tfsdk.State) (wafmodule.Patch, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	var configured, planned wafmodule.TemplateModel
+	diagnostics.Append(config.Get(ctx, &configured)...)
+	diagnostics.Append(plan.Get(ctx, &planned)...)
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	return ({{$r.LowerCamel}}Codec{}).buildConfigsPatch(ctx, configured.Configs, planned.Configs, diagnostics)
+}
+
+func ({{$r.LowerCamel}}Codec) buildConfigsPatch(ctx context.Context, configured, planned types.Object, diagnostics diag.Diagnostics) (wafmodule.Patch, diag.Diagnostics) {
+	if configured.IsNull() {
+		return {{$r.LowerCamel}}Patch{}, diagnostics
+	}
+	if configured.IsUnknown() || planned.IsNull() || planned.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} configuration", "The configs block must be known during apply.")
+		return nil, diagnostics
+	}
+
+	var configValues, planValues {{$r.LowerCamel}}ConfigsModel
+	diagnostics.Append(configured.As(ctx, &configValues, basetypes.ObjectAsOptions{})...)
+	diagnostics.Append(planned.As(ctx, &planValues, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	{{- if $r.CrossFieldRules}}
+	diagnostics.Append({{$r.LowerCamel}}ValidateConfiguredCrossFields(planValues)...)
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	{{- end}}
+
+	patch := {{$r.LowerCamel}}Patch{}
+	{{- range .Resource.Scalars}}
+	{{- $scalar := .}}
+	{{- if not .ComputedOnly}}
+	{{- if eq .Kind "string"}}
+	patch.{{.GoName}}, diagnostics = {{$r.LowerCamel}}ConfiguredString(configValues.{{.GoName}}, planValues.{{.GoName}}, "{{.Name}}", diagnostics)
+	{{- if .EnumMap}}
+	if patch.{{.GoName}}.Set && !{{.EnumValid}}(patch.{{.GoName}}.Value) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.Name}}", "{{.Name}} must be one of {{enumProse .Enum}}.")
+	}
+	{{- end}}
+	{{- if .WireAliases}}
+	if patch.{{.GoName}}.Set {
+		{{- range .WireAliases}}
+		if patch.{{$scalar.GoName}}.Value == {{.TerraformLiteral}} {
+			patch.{{$scalar.GoName}}.Value = {{.WireLiteral}}
+		}
+		{{- end}}
+	}
+	{{- end}}
+	{{- if .PatternVar}}
+	if patch.{{.GoName}}.Set && !{{.PatternVar}}.MatchString(patch.{{.GoName}}.Value) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.Name}}", "{{.Name}} " + {{printf "%q" .PatternMessage}})
+	}
+	{{- end}}
+	{{- else if eq .Kind "integer"}}
+	patch.{{.GoName}}, diagnostics = {{$r.LowerCamel}}ConfiguredInt64(configValues.{{.GoName}}, planValues.{{.GoName}}, "{{.Name}}", diagnostics)
+	{{- $check := boundCheck .HasMin .HasMax .Min .Max (printf "patch.%s.Value" .GoName)}}
+	{{- if $check}}
+	if patch.{{.GoName}}.Set && ({{$check}}) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.Name}}", fmt.Sprintf("{{.Name}} must be {{.BoundMessage}}."))
+	}
+	{{- end}}
+	{{- else if eq .Kind "object"}}
+	{{$obj := .}}
+	if !configValues.{{.GoName}}.IsNull() {
+		{{$r.LowerCamel}}{{.GoName}}Obj := configValues.{{.GoName}}.Attributes()
+		{{$r.LowerCamel}}{{.GoName}}Wire := map[string]any{}
+		{{- range $obj.ObjectFields}}
+		{{- if eq .Kind "string"}}
+		if v := {{$r.LowerCamel}}{{$obj.GoName}}Obj["{{.Name}}"]; !v.IsNull() {
+			{{$r.LowerCamel}}{{$obj.GoName}}Wire["{{.Name}}"] = v.(types.String).ValueString()
+		}
+		{{- else if eq .Kind "boolean"}}
+		if v := {{$r.LowerCamel}}{{$obj.GoName}}Obj["{{.Name}}"]; !v.IsNull() {
+			{{$r.LowerCamel}}{{$obj.GoName}}Wire["{{.Name}}"] = v.(types.Bool).ValueBool()
+		}
+		{{- else if eq .Kind "integer"}}
+		if v := {{$r.LowerCamel}}{{$obj.GoName}}Obj["{{.Name}}"]; !v.IsNull() {
+			{{$r.LowerCamel}}{{$obj.GoName}}Wire["{{.Name}}"] = v.(types.Int64).ValueInt64()
+		}
+		{{- end}}
+		{{- end}}
+		{{$r.LowerCamel}}{{.GoName}}JSON, _ := json.Marshal({{$r.LowerCamel}}{{.GoName}}Wire)
+		patch.{{.GoName}} = client.Optional[json.RawMessage]{Set: true, Value: {{$r.LowerCamel}}{{.GoName}}JSON}
+	}
+	{{- else}}
+	patch.{{.GoName}}, diagnostics = {{$r.LowerCamel}}ConfiguredBool(configValues.{{.GoName}}, planValues.{{.GoName}}, "{{.Name}}", diagnostics)
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	patch.{{.GoName}}, diagnostics = {{$r.LowerCamel}}BuildConfigured{{.GoName}}(ctx, configValues.{{.GoName}}, planValues.{{.GoName}}, diagnostics)
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	patch.{{.GoName}}, diagnostics = {{$r.LowerCamel}}BuildConfigured{{.GoName}}(ctx, configValues.{{.GoName}}, planValues.{{.GoName}}, diagnostics)
+	{{- end}}
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	return patch, diagnostics
+}
+
+func ({{$r.LowerCamel}}Codec) ValidateResult(ctx context.Context, result client.WAFModuleResult, ownership wafmodule.OwnershipContext) diag.Diagnostics {
+	_, diagnostics := {{$r.LowerCamel}}DecodeScalars(result)
+	{{- if $r.HasOwnership}}
+	owned, ownershipDiagnostics := {{$r.LowerCamel}}Ownership(ctx, result.Template, ownership)
+	diagnostics.Append(ownershipDiagnostics...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	if owned.{{.GoName}} {
+		_, itemDiagnostics := {{$r.LowerCamel}}Decode{{.GoName}}({{if .WireParent}}{{$r.LowerCamel}}NestedConfigRaw(result.Configs["{{.WireParent}}"], "{{.WireName}}"){{else}}result.Configs["{{.WireName}}"]{{end}})
+		diagnostics.Append(itemDiagnostics...)
+	}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	if owned.{{.GoName}} {
+		_, itemDiagnostics := {{$r.LowerCamel}}Decode{{.GoName}}(result.Configs["{{.WireName}}"])
+		diagnostics.Append(itemDiagnostics...)
+	}
+	{{- end}}
+	return diagnostics
+}
+
+func ({{$r.LowerCamel}}Codec) Flatten(ctx context.Context, epID string, result client.WAFModuleResult, ownership wafmodule.OwnershipContext) (any, diag.Diagnostics) {
+	model := {{$r.LowerCamel}}ResourceModel{
+		EPID:     types.StringValue(epID),
+		Template: types.BoolValue(result.Template),
+		Configs:  types.ObjectNull({{$r.LowerCamel}}ConfigAttributeTypes),
+	}
+	scalars, diagnostics := {{$r.LowerCamel}}DecodeScalars(result)
+	if diagnostics.HasError() || result.Template {
+		return &model, diagnostics
+	}
+	{{- if $r.HasOwnership}}
+	owned, ownershipDiagnostics := {{$r.LowerCamel}}Ownership(ctx, result.Template, ownership)
+	diagnostics.Append(ownershipDiagnostics...)
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	{{- end}}
+	scalarValues := map[string]attr.Value{}
+	{{- range .Resource.Scalars}}
+	{{- if eq .Kind "string"}}
+	{{- if .Required}}
+	scalarValues["{{.Name}}"] = types.StringValue(scalars.{{.GoName}})
+	{{- else}}
+	{{.Name}}Scalar := types.StringNull()
+	if scalars.{{.GoName}} != nil {
+		{{.Name}}Scalar = types.StringValue(*scalars.{{.GoName}})
+	}
+	scalarValues["{{.Name}}"] = {{.Name}}Scalar
+	{{- end}}
+	{{- else if eq .Kind "integer"}}
+	{{- if .Required}}
+	scalarValues["{{.Name}}"] = types.Int64Value(scalars.{{.GoName}})
+	{{- else}}
+	{{.Name}}Scalar := types.Int64Null()
+	if scalars.{{.GoName}} != nil {
+		{{.Name}}Scalar = types.Int64Value(*scalars.{{.GoName}})
+	}
+	scalarValues["{{.Name}}"] = {{.Name}}Scalar
+	{{- end}}
+	{{- else if eq .Kind "object"}}
+	{{$obj := .}}
+	{{$obj.Name}}Scalar := types.ObjectNull({{$r.LowerCamel}}Config{{$obj.GoName}}AttributeTypes)
+	if len(scalars.{{$obj.GoName}}) > 0 {
+		var {{$obj.Name}}RawObj map[string]any
+		if err := json.Unmarshal(scalars.{{$obj.GoName}}, &{{$obj.Name}}RawObj); err == nil {
+			{{$obj.Name}}Attr := map[string]attr.Value{}
+			{{- range $obj.ObjectFields}}
+			{{- if eq .Kind "string"}}
+			if v, ok := {{$obj.Name}}RawObj["{{.Name}}"]; ok {
+				if sv, ok := v.(string); ok {
+					{{$obj.Name}}Attr["{{.Name}}"] = types.StringValue(sv)
+				} else {
+					{{$obj.Name}}Attr["{{.Name}}"] = types.StringNull()
+				}
+			} else {
+				{{$obj.Name}}Attr["{{.Name}}"] = types.StringNull()
+			}
+			{{- else if eq .Kind "boolean"}}
+			if v, ok := {{$obj.Name}}RawObj["{{.Name}}"]; ok {
+				if bv, ok := v.(bool); ok {
+					{{$obj.Name}}Attr["{{.Name}}"] = types.BoolValue(bv)
+				} else {
+					{{$obj.Name}}Attr["{{.Name}}"] = types.BoolNull()
+				}
+			} else {
+				{{$obj.Name}}Attr["{{.Name}}"] = types.BoolNull()
+			}
+			{{- else if eq .Kind "integer"}}
+			if v, ok := {{$obj.Name}}RawObj["{{.Name}}"]; ok {
+				if fv, ok := v.(float64); ok {
+					{{$obj.Name}}Attr["{{.Name}}"] = types.Int64Value(int64(fv))
+				} else {
+					{{$obj.Name}}Attr["{{.Name}}"] = types.Int64Null()
+				}
+			} else {
+				{{$obj.Name}}Attr["{{.Name}}"] = types.Int64Null()
+			}
+			{{- end}}
+			{{- end}}
+			{{$obj.Name}}Object, objDiags := types.ObjectValue({{$r.LowerCamel}}Config{{$obj.GoName}}AttributeTypes, {{$obj.Name}}Attr)
+			diagnostics.Append(objDiags...)
+			{{$obj.Name}}Scalar = {{$obj.Name}}Object
+		}
+	}
+	scalarValues["{{$obj.Name}}"] = {{$obj.Name}}Scalar
+	{{- else}}
+	{{- if .Required}}
+	scalarValues["{{.Name}}"] = types.BoolValue(scalars.{{.GoName}})
+	{{- else}}
+	{{.Name}}Scalar := types.BoolNull()
+	if scalars.{{.GoName}} != nil {
+		{{.Name}}Scalar = types.BoolValue(*scalars.{{.GoName}})
+	}
+	scalarValues["{{.Name}}"] = {{.Name}}Scalar
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	{{.LocalName}}List := types.ObjectNull({{.WrapperAttributeTypes}})
+	if owned.{{.GoName}} {
+		items, itemDiagnostics := {{$r.LowerCamel}}Decode{{.GoName}}({{if .WireParent}}{{$r.LowerCamel}}NestedConfigRaw(result.Configs["{{.WireParent}}"], "{{.WireName}}"){{else}}result.Configs["{{.WireName}}"]{{end}})
+		diagnostics.Append(itemDiagnostics...)
+		{{- if or (.Item.Fields | hasSubItemArray) (.Item.Fields | hasItemStringArray)}}
+		subItemOwnedMasks := make(map[string][]bool)
+		{{- range .Item.Fields}}
+		{{- if or (eq .Kind "array") (eq .Kind "string_array")}}
+		subItemOwnedMasks["{{.GoName}}"] = make([]bool, len(items.Items))
+		{{- end}}
+		{{- end}}
+		if ownership.Source == wafmodule.OwnershipConfigured || ownership.Source == wafmodule.OwnershipPriorState {
+			ownershipConfigsValue, ownershipConfigsDiagnostics := wafmodule.OwnershipConfigs(ctx, ownership)
+			diagnostics.Append(ownershipConfigsDiagnostics...)
+			if !ownershipConfigsValue.IsNull() && !ownershipConfigsValue.IsUnknown() {
+				var ownershipConfigs {{$r.LowerCamel}}ConfigsModel
+				diagnostics.Append(ownershipConfigsValue.As(ctx, &ownershipConfigs, basetypes.ObjectAsOptions{})...)
+				if !ownershipConfigs.{{.GoName}}.IsNull() && !ownershipConfigs.{{.GoName}}.IsUnknown() {
+					var ownershipWrapper {{$r.LowerCamel}}WrapperModel
+					diagnostics.Append(ownershipConfigs.{{.GoName}}.As(ctx, &ownershipWrapper, basetypes.ObjectAsOptions{})...)
+					if !ownershipWrapper.Items.IsNull() && !ownershipWrapper.Items.IsUnknown() {
+						var ownershipItems []{{.CodecPrefix}}ItemModel
+						diagnostics.Append(ownershipWrapper.Items.ElementsAs(ctx, &ownershipItems, false)...)
+						for i, ci := range ownershipItems {
+							{{- range .Item.Fields}}
+							{{- if eq .Kind "array"}}
+							if i < len(subItemOwnedMasks["{{.GoName}}"]) && !ci.{{.GoName}}.IsNull() {
+								subItemOwnedMasks["{{.GoName}}"][i] = true
+							}
+							{{- else if eq .Kind "string_array"}}
+							if i < len(subItemOwnedMasks["{{.GoName}}"]) && !ci.{{.GoName}}.IsNull() {
+								subItemOwnedMasks["{{.GoName}}"][i] = true
+							}
+							{{- end}}
+							{{- end}}
+						}
+					}
+				}
+			}
+		} else {
+			{{- range .Item.Fields}}
+			{{- if or (eq .Kind "array") (eq .Kind "string_array")}}
+			for i := range subItemOwnedMasks["{{.GoName}}"] { subItemOwnedMasks["{{.GoName}}"][i] = true }
+			{{- end}}
+			{{- end}}
+		}
+		{{- else}}
+		subItemOwnedMasks := make(map[string][]bool)
+		{{- end}}
+		// Decode nested sub-item arrays for owned items only (fail-closed on
+		// unknown keys). Unowned items leave the nested array nil (opaque).
+		{{- if .Item.Fields | hasSubItemArray}}
+		{{$coll.LocalName}}Raw := {{if $coll.WireParent}}{{$r.LowerCamel}}NestedConfigRaw(result.Configs["{{$coll.WireParent}}"], "{{$coll.WireName}}"){{else}}result.Configs["{{$coll.WireName}}"]{{end}}
+		if len({{$coll.LocalName}}Raw) > 0 && !{{$r.LowerCamel}}JSONNull({{$coll.LocalName}}Raw) {
+			var {{$coll.LocalName}}RawItems []json.RawMessage
+			if err := json.Unmarshal({{$coll.LocalName}}Raw, &{{$coll.LocalName}}RawItems); err == nil {
+				for _, ri := range {{$coll.LocalName}}RawItems {
+					var itemObj map[string]json.RawMessage
+					if err := json.Unmarshal(ri, &itemObj); err != nil {
+						continue
+					}
+					// Match the raw parent item to the decoded item by idx
+					// (decoded items are sorted by idx, raw items are in wire order).
+					{{- if eq $coll.IdxKind "string"}}
+					rawIdxInt, ok := {{$r.LowerCamel}}ParseIdx(itemObj["idx"], "{{$coll.WireName}} item")
+					if !ok {
+						continue
+					}
+					{{- else}}
+					var rawIdx json.Number
+					if err := json.Unmarshal(itemObj["idx"], &rawIdx); err != nil {
+						continue
+					}
+					rawIdxInt, err := rawIdx.Int64()
+					if err != nil {
+						continue
+					}
+					{{- end}}
+					for j := range items.Items {
+						{{- if eq $coll.IdxKind "string"}}
+						if int(items.Items[j].Index) == int(rawIdxInt) {
+						{{- else}}
+						if items.Items[j].Index == int(rawIdxInt) {
+						{{- end}}
+							{{- range $coll.Item.Fields}}
+							{{- if eq .Kind "array"}}
+							{{$arr2 := .}}
+							if j < len(subItemOwnedMasks["{{.GoName}}"]) && subItemOwnedMasks["{{.GoName}}"][j] {
+								{{$arr2.Name}}Decoded := {{$coll.CodecPrefix}}DecodeNested{{.GoName}}(itemObj["{{.WireName}}"], fmt.Sprintf("{{$coll.WireName}} item %d {{.Name}}", j+1), &diagnostics)
+								if {{$arr2.Name}}Decoded != nil {
+									items.Items[j].{{.GoName}}, _ = json.Marshal({{$arr2.Name}}Decoded)
+								}
+							}
+							{{- end}}
+							{{- end}}
+							break
+						}
+					}
+				}
+			}
+		}
+		{{- end}}
+		// Decode item-level scalar-string-arrays for owned items only (fail-
+		// closed on unknown keys). Unowned items leave the array nil (opaque).
+		{{- if .Item.Fields | hasItemStringArray}}
+		{{$coll.LocalName}}RawISA := {{if $coll.WireParent}}{{$r.LowerCamel}}NestedConfigRaw(result.Configs["{{$coll.WireParent}}"], "{{$coll.WireName}}"){{else}}result.Configs["{{$coll.WireName}}"]{{end}}
+		if len({{$coll.LocalName}}RawISA) > 0 && !{{$r.LowerCamel}}JSONNull({{$coll.LocalName}}RawISA) {
+			var {{$coll.LocalName}}RawItemsISA []json.RawMessage
+			if err := json.Unmarshal({{$coll.LocalName}}RawISA, &{{$coll.LocalName}}RawItemsISA); err == nil {
+				{{- if .Unindexed}}
+				for riIndex, ri := range {{$coll.LocalName}}RawItemsISA {
+				{{- else}}
+				for _, ri := range {{$coll.LocalName}}RawItemsISA {
+				{{- end}}
+					var itemObj map[string]json.RawMessage
+					if err := json.Unmarshal(ri, &itemObj); err != nil {
+						continue
+					}
+					{{- if .Unindexed}}
+					// Unindexed collection: match the raw parent item to the
+					// decoded item by position (decoded items keep wire order).
+					j := riIndex
+					if j < len(items.Items) {
+						{{- range $coll.Item.Fields}}
+						{{- if eq .Kind "string_array"}}
+						{{$arr2 := .}}
+						if j < len(subItemOwnedMasks["{{.GoName}}"]) && subItemOwnedMasks["{{.GoName}}"][j] {
+							{{$arr2.Name}}Decoded := {{$coll.CodecPrefix}}DecodeItemStringArray{{.GoName}}(itemObj["{{.WireName}}"], fmt.Sprintf("{{$coll.WireName}} item %d {{.Name}}", j+1), &diagnostics)
+							if {{$arr2.Name}}Decoded != nil {
+								items.Items[j].{{.GoName}}, _ = json.Marshal({{$arr2.Name}}Decoded)
+							}
+						}
+						{{- end}}
+						{{- end}}
+					}
+					{{- else}}
+					// Indexed collection: match by idx (decoded items are
+					// sorted by idx, raw items are in wire order).
+					{{- if eq $coll.IdxKind "string"}}
+					rawIdxInt, ok := {{$r.LowerCamel}}ParseIdx(itemObj["idx"], "{{$coll.WireName}} item")
+					if !ok {
+						continue
+					}
+					{{- else}}
+					var rawIdx json.Number
+					if err := json.Unmarshal(itemObj["idx"], &rawIdx); err != nil {
+						continue
+					}
+					rawIdxInt, err := rawIdx.Int64()
+					if err != nil {
+						continue
+					}
+					{{- end}}
+					for j := range items.Items {
+						{{- if eq $coll.IdxKind "string"}}
+						if int(items.Items[j].Index) == int(rawIdxInt) {
+						{{- else}}
+						if items.Items[j].Index == int(rawIdxInt) {
+						{{- end}}
+							{{- range $coll.Item.Fields}}
+							{{- if eq .Kind "string_array"}}
+							{{$arr2 := .}}
+							if j < len(subItemOwnedMasks["{{.GoName}}"]) && subItemOwnedMasks["{{.GoName}}"][j] {
+								{{$arr2.Name}}Decoded := {{$coll.CodecPrefix}}DecodeItemStringArray{{.GoName}}(itemObj["{{.WireName}}"], fmt.Sprintf("{{$coll.WireName}} item %d {{.Name}}", j+1), &diagnostics)
+								if {{$arr2.Name}}Decoded != nil {
+									items.Items[j].{{.GoName}}, _ = json.Marshal({{$arr2.Name}}Decoded)
+								}
+							}
+							{{- end}}
+							{{- end}}
+							break
+						}
+					}
+					{{- end}}
+				}
+			}
+		}
+		{{- end}}
+		{{.LocalName}}List, itemDiagnostics = {{$r.LowerCamel}}{{.GoName}}WrapperValue(items, subItemOwnedMasks)
+		diagnostics.Append(itemDiagnostics...)
+	}
+	scalarValues["{{.WireName}}"] = {{.LocalName}}List
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	{{.LocalName}}List := types.ObjectNull({{.LocalName}}WrapperAttributeTypes)
+	if owned.{{.GoName}} {
+		items, itemDiagnostics := {{$r.LowerCamel}}Decode{{.GoName}}(result.Configs["{{.WireName}}"])
+		diagnostics.Append(itemDiagnostics...)
+		{{.LocalName}}List, itemDiagnostics = {{$r.LowerCamel}}{{.GoName}}WrapperValue(items)
+		diagnostics.Append(itemDiagnostics...)
+	}
+	scalarValues["{{.WireName}}"] = {{.LocalName}}List
+	{{- end}}
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	model.Configs, diagnostics = types.ObjectValue({{$r.LowerCamel}}ConfigAttributeTypes, scalarValues)
+	return &model, diagnostics
+}
+
+func (codec {{$r.LowerCamel}}Codec) FlattenTemplate(ctx context.Context, templateID string, result client.WAFModuleResult, ownership wafmodule.OwnershipContext) (any, diag.Diagnostics) {
+	result.Template = false
+	appModelAny, diagnostics := codec.Flatten(ctx, templateID, result, ownership)
+	if diagnostics.HasError() || appModelAny == nil {
+		return nil, diagnostics
+	}
+	appModel, ok := appModelAny.(*{{$r.LowerCamel}}ResourceModel)
+	if !ok {
+		diagnostics.AddError("Unable to flatten {{$r.OperationName}} template configuration", fmt.Sprintf("Unexpected app model type %T.", appModelAny))
+		return nil, diagnostics
+	}
+	return &wafmodule.TemplateModel{
+		TemplateID: types.StringValue(templateID),
+		Configs:    appModel.Configs,
+	}, diagnostics
+}
+
+func (patch {{$r.LowerCamel}}Patch) Apply(_ context.Context, result *client.WAFModuleResult) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	if result == nil {
+		diagnostics.AddError("Unable to merge {{$r.OperationName}} configuration", "The current API result was nil.")
+		return diagnostics
+	}
+	set := func(name string, value any) {
+		if err := result.SetConfig(name, value); err != nil {
+			diagnostics.AddError("Unable to merge {{$r.OperationName}} configuration", fmt.Sprintf("Unable to encode %s: %v", name, err))
+		}
+	}
+	{{- if $r.HasNestedCollections}}
+	setNested := func(parent, name string, value any) {
+		object := make(map[string]json.RawMessage)
+		if raw := result.Configs[parent]; len(raw) > 0 && !{{$r.LowerCamel}}JSONNull(raw) {
+			if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+				diagnostics.AddError("Unable to merge {{$r.OperationName}} configuration", fmt.Sprintf("Unable to decode nested config object %s.", parent))
+				return
+			}
+		}
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			diagnostics.AddError("Unable to merge {{$r.OperationName}} configuration", fmt.Sprintf("Unable to encode %s.%s: %v", parent, name, err))
+			return
+		}
+		object[name] = encoded
+		set(parent, object)
+	}
+	{{- end}}
+	{{- range .Resource.Scalars}}
+	{{- if not .ComputedOnly}}
+	if patch.{{.GoName}}.Set {
+		set("{{.Name}}", patch.{{.GoName}}.Value)
+	}
+	{{- end}}
+	{{- end}}
+	{{- range .Resource.Collections}}
+{{$coll := .}}
+	if patch.{{.GoName}}.Set {
+		{{- if or (.Item.Fields | hasSubItemArray) (.Item.Fields | hasItemStringArray)}}
+		// Merge preserved nested sub-item arrays / item string-arrays from the
+		// fresh GET into a per-attempt clone of the patch items. This ensures
+		// opaque preservation (the PUT carries the fresh GET's nested raw
+		// value, including unknown keys and null) and is safe across 409
+		// retries (the original patch is not mutated; the clone is rebuilt
+		// from each fresh GET).
+		{{$coll.LocalName}}GetRaw := {{if .WireParent}}{{$r.LowerCamel}}NestedConfigRaw(result.Configs["{{.WireParent}}"], "{{.WireName}}"){{else}}result.Configs["{{.WireName}}"]{{end}}
+		{{$coll.LocalName}}PatchItems := make([]{{.CodecPrefix}}WireItem, len(patch.{{.GoName}}.Items))
+		copy({{$coll.LocalName}}PatchItems, patch.{{.GoName}}.Items)
+		if len({{$coll.LocalName}}GetRaw) > 0 && !{{$r.LowerCamel}}JSONNull({{$coll.LocalName}}GetRaw) {
+			var {{$coll.LocalName}}GetItems []map[string]json.RawMessage
+			if err := json.Unmarshal({{$coll.LocalName}}GetRaw, &{{$coll.LocalName}}GetItems); err == nil {
+				// Preserve omitted nested arrays by matching each patch item to a
+				// unique unconsumed fresh-GET item by its "unchanged projection"
+				// (canonical content of every known parent field except the
+				// wire-only idx and the nested ownership fields). There is no
+				// proven stable identity field (idx is regenerated sequentially;
+				// cat/name are not unique), so preservation matches by unchanged
+				// content, not identity. A unique unconsumed match is required:
+				// a changed, new, reordered-differently, or duplicate item with
+				// an omitted nested wrapper cannot be matched safely, so the
+				// apply is refused (omission means preserve; an ambiguous mapping
+				// must fail rather than be guessed). One remote item cannot
+				// satisfy two patch items (consumed map).
+				{{$coll.LocalName}}Consumed := make(map[int]bool, len({{$coll.LocalName}}GetItems))
+				for i := range {{$coll.LocalName}}PatchItems {
+					{{- $hasNested := or (.Item.Fields | hasSubItemArray) (.Item.Fields | hasItemStringArray)}}
+					{{- if $hasNested}}
+					// Determine whether any nested ownership field is omitted for
+					// this patch item; only then is preservation needed.
+					{{$coll.LocalName}}OmitAny := false
+					{{- range .Item.Fields}}
+					{{- if or (eq .Kind "array") (eq .Kind "string_array")}}
+					if len({{$coll.LocalName}}PatchItems[i].{{.GoName}}) == 0 {
+						{{$coll.LocalName}}OmitAny = true
+					}
+					{{- end}}
+					{{- end}}
+					{{- if .Item.HasPreserveFromGet}}
+					{{$coll.LocalName}}OmitAny = true
+					{{- end}}
+					if {{$coll.LocalName}}OmitAny && len({{$coll.LocalName}}GetItems) > 0 {
+						// Only preserve when the fresh GET has existing items to
+						// preserve from. When the remote collection is empty,
+						// every patch item is new: an omitted nested wrapper has
+						// nothing to preserve and stays omitted (no refusal).
+						match, matchIndex, ok := {{$coll.CodecPrefix}}MatchGetItem({{$coll.LocalName}}PatchItems[i], {{$coll.LocalName}}GetItems, {{$coll.LocalName}}Consumed)
+						if !ok {
+							diagnostics.AddError("Cannot preserve omitted nested array",
+								fmt.Sprintf("configs.{{.WireName}}.item[%d] omits a nested ownership wrapper, but the provider could not uniquely match the parent item to the fresh GET by its unchanged content. Apply was refused because omission means preserve. Configure each omitted wrapper explicitly: an empty wrapper sends []; a populated wrapper replaces the array.", i+1))
+							return diagnostics
+						}
+						{{$coll.LocalName}}Consumed[matchIndex] = true
+						{{- range .Item.Fields}}
+						{{- if or (eq .Kind "array") (eq .Kind "string_array")}}
+						if len({{$coll.LocalName}}PatchItems[i].{{.GoName}}) == 0 {
+							if subRaw, ok := match["{{.WireName}}"]; ok && len(subRaw) > 0 {
+								{{$coll.LocalName}}PatchItems[i].{{.GoName}} = subRaw
+							}
+						}
+						{{- else if .ComputedOnly}}
+						if subRaw, ok := match["{{.WireName}}"]; ok && len(subRaw) > 0 && !{{$r.LowerCamel}}JSONNull(subRaw) {
+							var {{.Name}}Grafted string
+							if err := json.Unmarshal(subRaw, &{{.Name}}Grafted); err == nil {
+								{{$coll.LocalName}}PatchItems[i].{{.GoName}} = &{{.Name}}Grafted
+							}
+						}
+						{{- end}}
+						{{- end}}
+					}
+					{{- end}}
+				}
+			}
+		}
+		{{- if .WireParent}}
+		setNested("{{.WireParent}}", "{{.WireName}}", {{$coll.LocalName}}PatchItems)
+		{{- else}}
+		set("{{.WireName}}", {{$coll.LocalName}}PatchItems)
+		{{- end}}
+		{{- else}}
+		{{- if .WireParent}}
+		setNested("{{.WireParent}}", "{{.WireName}}", patch.{{.GoName}}.Items)
+		{{- else}}
+		set("{{.WireName}}", patch.{{.GoName}}.Items)
+		{{- end}}
+		{{- end}}
+	}
+	{{- end}}
+	{{- range .Resource.ScalarStringArrays}}
+	if patch.{{.GoName}}.Set {
+		set("{{.WireName}}", patch.{{.GoName}}.Items)
+	}
+	{{- end}}
+	return diagnostics
+}
+
+{{- if $r.HasFilter}}
+
+func ({{$r.LowerCamel}}DefaultFalseModifier) Description(context.Context) string {
+	return "Defaults an omitted configured {{$r.OperationName}} item boolean to false."
+}
+
+func ({{$r.LowerCamel}}DefaultFalseModifier) MarkdownDescription(context.Context) string {
+	return "Defaults an omitted configured {{$r.OperationName}} item boolean with a reviewed false default to `false`."
+}
+
+func ({{$r.LowerCamel}}DefaultFalseModifier) PlanModifyBool(_ context.Context, request planmodifier.BoolRequest, response *planmodifier.BoolResponse) {
+	if request.ConfigValue.IsNull() {
+		response.PlanValue = types.BoolValue(false)
+	}
+}
+{{- end}}
+{{- if $r.HasDefaultTrue}}
+
+func ({{$r.LowerCamel}}DefaultTrueModifier) Description(context.Context) string {
+	return "Defaults an omitted configured {{$r.OperationName}} item boolean to true."
+}
+
+func ({{$r.LowerCamel}}DefaultTrueModifier) MarkdownDescription(context.Context) string {
+	return "Defaults an omitted configured {{$r.OperationName}} item boolean with a reviewed true default to `true`."
+}
+
+func ({{$r.LowerCamel}}DefaultTrueModifier) PlanModifyBool(_ context.Context, request planmodifier.BoolRequest, response *planmodifier.BoolResponse) {
+	if request.ConfigValue.IsNull() {
+		response.PlanValue = types.BoolValue(true)
+	}
+}
+{{- end}}
+{{- if $r.HasClearStrings}}
+
+func ({{$r.LowerCamel}}ClearStringModifier) Description(context.Context) string {
+	return "Clears an omitted optional {{$r.OperationName}} item string instead of retaining positional prior state."
+}
+
+func ({{$r.LowerCamel}}ClearStringModifier) MarkdownDescription(context.Context) string {
+	return "Clears an omitted optional {{$r.OperationName}} item string instead of retaining positional prior state."
+}
+
+func ({{$r.LowerCamel}}ClearStringModifier) PlanModifyString(_ context.Context, request planmodifier.StringRequest, response *planmodifier.StringResponse) {
+	if request.ConfigValue.IsNull() {
+		response.PlanValue = types.StringNull()
+	}
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+{{- range .Resource.Collections}}
+{{$coll := .}}
+func {{$r.LowerCamel}}ValidateConfigured{{.GoName}}(ctx context.Context, wrapper types.Object) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	if wrapper.IsNull() || wrapper.IsUnknown() {
+		return diagnostics
+	}
+	var value {{$r.LowerCamel}}WrapperModel
+	diagnostics.Append(wrapper.As(ctx, &value, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() || value.Items.IsNull() || value.Items.IsUnknown() {
+		return diagnostics
+	}
+	{{- if .MaxItemsVar}}
+	if len(value.Items.Elements()) > {{.MaxItemsVar}} {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", fmt.Sprintf("{{.WireName}} may contain at most %d item blocks.", {{.MaxItemsVar}}))
+		return diagnostics
+	}
+	{{- end}}
+	var items []{{.CodecPrefix}}ItemModel
+	diagnostics.Append(value.Items.ElementsAs(ctx, &items, false)...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	for index, item := range items {
+		location := fmt.Sprintf("{{.WireName}} item %d", index+1)
+		{{- range .Item.Fields}}
+		{{- if eq .Kind "string"}}
+		{{- if .Required}}
+		if item.{{.GoName}}.IsNull() {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} is required.")
+		} else if !item.{{.GoName}}.IsUnknown() {
+			{{$r.LowerCamel}}ValidateString(location, " {{.Name}}", item.{{.GoName}}.ValueString(), {{.MinLength}}, {{.MaxLength}}, &diagnostics)
+			{{- if .PatternVar}}
+			{{$r.LowerCamel}}ValidatePattern(location, " {{.Name}}", item.{{.GoName}}.ValueString(), {{.PatternVar}}, {{printf "%q" .PatternMessage}}, &diagnostics)
+			{{- end}}
+			{{- if .EnumMap}}
+			if !{{.EnumValid}}(item.{{.GoName}}.ValueString()) {
+				diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} must be one of {{enumProse .Enum}}.")
+			}
+			{{- end}}
+		}
+		{{- else}}
+		if !item.{{.GoName}}.IsNull() && !item.{{.GoName}}.IsUnknown() {
+			{{- if .MaxLength}}
+			if utf8.RuneCountInString(item.{{.GoName}}.ValueString()) > {{.MaxLength}} {
+				diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} exceeds %d UTF-8 characters.", location, {{.MaxLength}}))
+			}
+			{{- end}}
+			{{- if .EnumMap}}
+			if !{{.EnumValid}}(item.{{.GoName}}.ValueString()) {
+				diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} must be one of {{enumProse .Enum}}.")
+			}
+			{{- end}}
+		}
+		{{- end}}
+		{{- else if eq .Kind "object"}}
+		{{- if .Required}}
+		if item.{{.GoName}}.IsNull() {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} is required.")
+		} else if !item.{{.GoName}}.IsUnknown() {
+			diagnostics.Append({{$coll.CodecPrefix}}ValidateNested{{.GoName}}(ctx, location, item.{{.GoName}})...)
+		}
+		{{- else}}
+		if !item.{{.GoName}}.IsNull() && !item.{{.GoName}}.IsUnknown() {
+			diagnostics.Append({{$coll.CodecPrefix}}ValidateNested{{.GoName}}(ctx, location, item.{{.GoName}})...)
+		}
+		{{- end}}
+		{{- end}}
+		{{- end}}
+	}
+	return diagnostics
+}
+
+{{- range .Item.Fields}}
+{{- if .ObjectFields}}
+func {{$coll.CodecPrefix}}ValidateNested{{.GoName}}(ctx context.Context, location string, object types.Object) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	if object.IsNull() || object.IsUnknown() {
+		return diagnostics
+	}
+	var value {{$coll.CodecPrefix}}{{.GoName}}ObjectModel
+	diagnostics.Append(object.As(ctx, &value, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	{{- range .ObjectFields}}
+	{{- if eq .Kind "string"}}
+	if !value.{{.GoName}}.IsNull() && !value.{{.GoName}}.IsUnknown() {
+		{{- if .MaxLength}}
+		if utf8.RuneCountInString(value.{{.GoName}}.ValueString()) > {{.MaxLength}} {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} exceeds %d UTF-8 characters.", location, {{.MaxLength}}))
+		}
+		{{- end}}
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}(value.{{.GoName}}.ValueString()) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} must be one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+	}
+	{{- end}}
+	{{- end}}
+	return diagnostics
+}
+{{- end}}
+{{- end}}
+
+func {{$r.LowerCamel}}BuildConfigured{{.GoName}}(ctx context.Context, configured, planned types.Object, diagnostics diag.Diagnostics) ({{.CodecPrefix}}OwnedList, diag.Diagnostics) {
+	if configured.IsNull() {
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	if configured.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The {{.WireName}} ownership wrapper must be known during apply.")
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	if planned.IsNull() || planned.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The planned {{.WireName}} ownership wrapper must be known during apply.")
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	var configWrapper, planWrapper {{$r.LowerCamel}}WrapperModel
+	diagnostics.Append(configured.As(ctx, &configWrapper, basetypes.ObjectAsOptions{})...)
+	diagnostics.Append(planned.As(ctx, &planWrapper, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() {
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	if configWrapper.Items.IsUnknown() || planWrapper.Items.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The {{.WireName}} item blocks must be known during apply.")
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	if configWrapper.Items.IsNull() {
+		return {{.CodecPrefix}}OwnedList{Set: true, Items: []{{.CodecPrefix}}WireItem{}}, diagnostics
+	}
+
+	var configItems, planItems []{{.CodecPrefix}}ItemModel
+	diagnostics.Append(configWrapper.Items.ElementsAs(ctx, &configItems, false)...)
+	if planWrapper.Items.IsNull() {
+		if len(configItems) != 0 {
+			diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", "The planned item list unexpectedly became null.")
+		}
+		return {{.CodecPrefix}}OwnedList{Set: true, Items: []{{.CodecPrefix}}WireItem{}}, diagnostics
+	}
+	diagnostics.Append(planWrapper.Items.ElementsAs(ctx, &planItems, false)...)
+	if diagnostics.HasError() {
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	if len(configItems) != len(planItems) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", "Configured and planned item counts differ.")
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	{{- if .MaxItemsVar}}
+	if len(configItems) > {{.MaxItemsVar}} {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", fmt.Sprintf("{{.WireName}} may contain at most %d item blocks.", {{.MaxItemsVar}}))
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	{{- end}}
+
+	items := make([]{{.CodecPrefix}}WireItem, 0, len(configItems))
+	for index := range configItems {
+		configuredItem := configItems[index]
+		plannedItem := planItems[index]
+		location := fmt.Sprintf("{{.WireName}} item %d", index+1)
+		item := {{.CodecPrefix}}WireItem{
+			{{- if not .Unindexed}}
+			{{- if eq .IdxKind "string"}}
+			Index: {{$r.LowerCamel}}Idx(index + 1),
+			{{- else}}
+			Index: index + 1,
+			{{- end}}
+			{{- end}}
+		}
+		{{- range .Item.Fields}}
+		{{- if eq .Kind "boolean"}}
+		{{- if .ProviderDefaultBool}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", {{providerBoolDefault .ProviderDefaultBool}}, &diagnostics)
+		if !ok {
+			continue
+		}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", &diagnostics)
+		if !ok {
+			continue
+		}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedOptionalBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", &diagnostics)
+		if ok {
+			item.{{.GoName}} = {{.Name}}Value
+		}
+		{{- end}}
+		{{- else if eq .Kind "object"}}
+		item.{{.GoName}} = {{$coll.CodecPrefix}}BuildNested{{.GoName}}(ctx, configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location, &diagnostics)
+		{{- else if eq .Kind "array"}}
+		{{$arr := .}}
+		{{$arr.Name}}Built := {{$coll.CodecPrefix}}BuildNested{{.GoName}}(ctx, configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location, &diagnostics)
+		if {{$arr.Name}}Built != nil {
+			item.{{.GoName}}, _ = json.Marshal({{$arr.Name}}Built)
+		}
+		{{- else if eq .Kind "string_array"}}
+		{{$arr := .}}
+		{{$arr.Name}}Built := {{$coll.CodecPrefix}}BuildItemStringArray{{.GoName}}(ctx, configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location, &diagnostics)
+		if {{$arr.Name}}Built.Set {
+			item.{{.GoName}}, _ = json.Marshal({{$arr.Name}}Built.Items)
+		}
+		{{- else if eq .Kind "integer"}}
+		{{- if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredInt64(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", &diagnostics)
+		if !ok {
+			continue
+		}
+		{{- $reqCheck := boundCheck .HasMin .HasMax .Min .Max (printf "%sValue" .Name)}}
+		{{- if $reqCheck}}
+		if {{$reqCheck}} {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} must be {{.BoundMessage}}.", location))
+		}
+		{{- end}}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}PlannedOptionalInt64(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", {{providerIntDefault .ProviderDefaultInt}}, &diagnostics)
+		{{- $optCheck := boundCheck .HasMin .HasMax .Min .Max (printf "item.%s" .GoName)}}
+		{{- if $optCheck}}
+		if !configuredItem.{{.GoName}}.IsNull() && !configuredItem.{{.GoName}}.IsUnknown() && ({{$optCheck}}) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} must be {{.BoundMessage}}.", location))
+		}
+		{{- end}}
+		{{- end}}
+		{{- else if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredString(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", &diagnostics)
+		if !ok {
+			continue
+		}
+		{{$r.LowerCamel}}ValidateString(location, " {{.Name}}", {{.Name}}Value, {{.MinLength}}, {{.MaxLength}}, &diagnostics)
+		{{- if .PatternVar}}
+		{{$r.LowerCamel}}ValidatePattern(location, " {{.Name}}", {{.Name}}Value, {{.PatternVar}}, {{printf "%q" .PatternMessage}}, &diagnostics)
+		{{- end}}
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}({{.Name}}Value) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} must be one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}PlannedOptionalString(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, location+" {{.Name}}", {{.MaxLength}}, &diagnostics)
+		{{- if .ProviderDefaultString}}
+		if item.{{.GoName}} == nil {
+			{{.Name}}Default := {{providerStringDefault .ProviderDefaultString}}
+			item.{{.GoName}} = &{{.Name}}Default
+		}
+		{{- end}}
+		{{- if .EnumMap}}
+		if item.{{.GoName}} != nil && !{{.EnumValid}}(*item.{{.GoName}}) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} must be one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		{{- if .PatternVar}}
+		if item.{{.GoName}} != nil && !{{.PatternVar}}.MatchString(*item.{{.GoName}}) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+		}
+		{{- end}}
+		{{- end}}
+		{{- end}}
+		items = append(items, item)
+	}
+	return {{.CodecPrefix}}OwnedList{Set: true, Items: items}, diagnostics
+}
+
+{{- range .Item.Fields}}
+{{- if .ObjectFields}}
+func {{$coll.CodecPrefix}}BuildNested{{.GoName}}(ctx context.Context, configured, planned types.Object, location string, diagnostics *diag.Diagnostics) *{{$coll.CodecPrefix}}{{.GoName}}Wire {
+	if configured.IsNull() {
+		return nil
+	}
+	resolve := func(value types.Object) {{$coll.CodecPrefix}}{{.GoName}}ObjectModel {
+		var model {{$coll.CodecPrefix}}{{.GoName}}ObjectModel
+		if value.IsNull() || value.IsUnknown() {
+			return model
+		}
+		diagnostics.Append(value.As(ctx, &model, basetypes.ObjectAsOptions{})...)
+		return model
+	}
+	configModel := resolve(configured)
+	planModel := resolve(planned)
+	wire := &{{$coll.CodecPrefix}}{{.GoName}}Wire{}
+	{{- range .ObjectFields}}
+	{{- if eq .Kind "boolean"}}
+	wire.{{.GoName}} = {{$r.LowerCamel}}PlannedNestedBool(configModel.{{.GoName}}, planModel.{{.GoName}})
+	{{- else}}
+	wire.{{.GoName}} = {{$r.LowerCamel}}PlannedNestedString(configModel.{{.GoName}}, planModel.{{.GoName}}, {{providerStringDefault .ProviderDefaultString}})
+	{{- if .EnumMap}}
+	if wire.{{.GoName}} != "" && !{{.EnumValid}}(wire.{{.GoName}}) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} must be one of {{enumProse .Enum}}.")
+	}
+	{{- end}}
+	{{- end}}
+	{{- end}}
+	return wire
+}
+{{- end}}
+{{- end}}
+
+{{- range .Item.Fields}}
+{{- if .SubItemArray}}
+{{$sub := .SubItemArray}}
+func {{$coll.CodecPrefix}}BuildNested{{.GoName}}(ctx context.Context, configured, planned types.Object, location string, diagnostics *diag.Diagnostics) *[]{{$sub.CodecPrefix}}WireItem {
+	if configured.IsNull() {
+		// Omission preserves the prior state value carried into the plan; fall
+		// back to null (sent as null on the wire) only when no known planned
+		// value exists.
+		if planned.IsNull() || planned.IsUnknown() {
+			return nil
+		}
+	} else if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			return nil
+		}
+	}
+	resolve := func(value types.Object) ({{$r.LowerCamel}}WrapperModel, bool) {
+		var wrapper {{$r.LowerCamel}}WrapperModel
+		if value.IsNull() || value.IsUnknown() {
+			return wrapper, false
+		}
+		diagnostics.Append(value.As(ctx, &wrapper, basetypes.ObjectAsOptions{})...)
+		return wrapper, true
+	}
+	configWrapper, configPresent := resolve(configured)
+	planWrapper, _ := resolve(planned)
+	if configPresent && (configWrapper.Items.IsUnknown()) {
+		diagnostics.AddError("Unknown {{$r.OperationName}} item", location+" {{.Name}} item blocks must be known during apply.")
+		return nil
+	}
+	var configItems, planItems []{{$sub.CodecPrefix}}ItemModel
+	if configPresent {
+		diagnostics.Append(configWrapper.Items.ElementsAs(ctx, &configItems, false)...)
+	}
+	if !planned.IsNull() && !planned.IsUnknown() {
+		diagnostics.Append(planWrapper.Items.ElementsAs(ctx, &planItems, false)...)
+	}
+	if configPresent && configWrapper.Items.IsNull() {
+		empty := []{{$sub.CodecPrefix}}WireItem{}
+		return &empty
+	}
+	if !planned.IsNull() && !planned.IsUnknown() && planWrapper.Items.IsNull() {
+		if len(configItems) != 0 {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} planned item list unexpectedly became null.")
+		}
+		empty := []{{$sub.CodecPrefix}}WireItem{}
+		return &empty
+	}
+	if !configPresent {
+		// Omitted config: preserve the planned (prior state) items if known.
+		if !planned.IsNull() && !planned.IsUnknown() && len(planItems) != 0 {
+			items := make([]{{$sub.CodecPrefix}}WireItem, 0, len(planItems))
+			for index := range planItems {
+				configuredItem := planItems[index]
+				plannedItem := planItems[index]
+				subLocation := fmt.Sprintf("%s {{.Name}} item %d", location, index+1)
+				item := {{$sub.CodecPrefix}}WireItem{Index: index + 1}
+				{{- range $sub.Fields}}
+				{{- if eq .Kind "boolean"}}
+				{{- if .Required}}
+				{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+				if !ok { continue }
+				item.{{.GoName}} = {{.Name}}Value
+				{{- else}}
+				{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedOptionalBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+				if ok { item.{{.GoName}} = {{.Name}}Value }
+				{{- end}}
+				{{- else if eq .Kind "integer"}}
+				{{- if .Required}}
+				{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredInt64(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+				if !ok { continue }
+				item.{{.GoName}} = {{.Name}}Value
+				{{- else}}
+				item.{{.GoName}} = {{$r.LowerCamel}}PlannedOptionalInt64(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", {{providerIntDefault .ProviderDefaultInt}}, diagnostics)
+				{{- end}}
+				{{- else if .Required}}
+				{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredString(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+				if !ok { continue }
+				{{$r.LowerCamel}}ValidateString(subLocation, " {{.Name}}", {{.Name}}Value, {{.MinLength}}, {{.MaxLength}}, diagnostics)
+				{{- if .EnumMap}}
+				if !{{.EnumValid}}({{.Name}}Value) {
+					diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} must be one of {{enumProse .Enum}}.")
+				}
+				{{- end}}
+				{{- if .PatternVar}}
+				if !{{.PatternVar}}.MatchString({{.Name}}Value) {
+					diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+				}
+				{{- end}}
+				item.{{.GoName}} = {{.Name}}Value
+				{{- else}}
+				item.{{.GoName}} = {{$r.LowerCamel}}PlannedOptionalString(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", {{.MaxLength}}, diagnostics)
+				{{- if .ProviderDefaultString}}
+				if item.{{.GoName}} == nil {
+					{{.Name}}Default := {{providerStringDefault .ProviderDefaultString}}
+					item.{{.GoName}} = &{{.Name}}Default
+				}
+				{{- end}}
+				{{- if .EnumMap}}
+				if item.{{.GoName}} != nil && !{{.EnumValid}}(*item.{{.GoName}}) {
+					diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} must be one of {{enumProse .Enum}}.")
+				}
+				{{- end}}
+				{{- if .PatternVar}}
+				if item.{{.GoName}} != nil && !{{.PatternVar}}.MatchString(*item.{{.GoName}}) {
+					diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+				}
+				{{- end}}
+				{{- end}}
+				{{- end}}
+				items = append(items, item)
+			}
+			return &items
+		}
+		return nil
+	}
+	if len(configItems) != len(planItems) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} configured and planned item counts differ.")
+		return nil
+	}
+	{{- if .SubItemArray.MaxItemsVar}}
+	if len(configItems) > {{.SubItemArray.MaxItemsVar}} {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} may contain at most %d item blocks.", location, {{.SubItemArray.MaxItemsVar}}))
+		return nil
+	}
+	{{- end}}
+	items := make([]{{$sub.CodecPrefix}}WireItem, 0, len(configItems))
+	for index := range configItems {
+		configuredItem := configItems[index]
+		plannedItem := planItems[index]
+		subLocation := fmt.Sprintf("%s {{.Name}} item %d", location, index+1)
+		item := {{$sub.CodecPrefix}}WireItem{Index: index + 1}
+		{{- range $sub.Fields}}
+		{{- if eq .Kind "boolean"}}
+		{{- if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+		if !ok { continue }
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedOptionalBool(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+		if ok { item.{{.GoName}} = {{.Name}}Value }
+		{{- end}}
+		{{- else if eq .Kind "integer"}}
+		{{- if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredInt64(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+		if !ok { continue }
+		{{- $reqCheck := boundCheck .HasMin .HasMax .Min .Max (printf "%sValue" .Name)}}
+		{{- if $reqCheck}}
+		if {{$reqCheck}} {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} must be {{.BoundMessage}}.", subLocation))
+		}
+		{{- end}}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}PlannedOptionalInt64(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", {{providerIntDefault .ProviderDefaultInt}}, diagnostics)
+		{{- $optCheck := boundCheck .HasMin .HasMax .Min .Max (printf "item.%s" .GoName)}}
+		{{- if $optCheck}}
+		if !configuredItem.{{.GoName}}.IsNull() && !configuredItem.{{.GoName}}.IsUnknown() && ({{$optCheck}}) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} must be {{.BoundMessage}}.", subLocation))
+		}
+		{{- end}}
+		{{- end}}
+		{{- else if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}PlannedRequiredString(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", diagnostics)
+		if !ok { continue }
+		{{$r.LowerCamel}}ValidateString(subLocation, " {{.Name}}", {{.Name}}Value, {{.MinLength}}, {{.MaxLength}}, diagnostics)
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}({{.Name}}Value) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} must be one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		{{- if .PatternVar}}
+		if !{{.PatternVar}}.MatchString({{.Name}}Value) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+		}
+		{{- end}}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}PlannedOptionalString(configuredItem.{{.GoName}}, plannedItem.{{.GoName}}, subLocation+" {{.Name}}", {{.MaxLength}}, diagnostics)
+		{{- if .ProviderDefaultString}}
+		if item.{{.GoName}} == nil {
+			{{.Name}}Default := {{providerStringDefault .ProviderDefaultString}}
+			item.{{.GoName}} = &{{.Name}}Default
+		}
+		{{- end}}
+		{{- if .EnumMap}}
+		if item.{{.GoName}} != nil && !{{.EnumValid}}(*item.{{.GoName}}) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} must be one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		{{- if .PatternVar}}
+		if item.{{.GoName}} != nil && !{{.PatternVar}}.MatchString(*item.{{.GoName}}) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", subLocation+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+		}
+		{{- end}}
+		{{- end}}
+		{{- end}}
+		items = append(items, item)
+	}
+	return &items
+}
+
+func {{$coll.CodecPrefix}}DecodeNested{{.GoName}}(raw json.RawMessage, location string, diagnostics *diag.Diagnostics) *[]{{$sub.CodecPrefix}}WireItem {
+	if len(raw) == 0 {
+		return nil
+	}
+	if {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was null, which the pinned schema does not mark nullable.")
+		return nil
+	}
+	var rawItems []json.RawMessage
+	if err := json.Unmarshal(raw, &rawItems); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not an array.")
+		return nil
+	}
+	{{- if .SubItemArray.MaxItemsVar}}
+	if len(rawItems) > {{.SubItemArray.MaxItemsVar}} {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} contained more than %d items.", location, {{.SubItemArray.MaxItemsVar}}))
+		return nil
+	}
+	{{- end}}
+	knownKeys := map[string]struct{}{
+		{{- range $sub.KnownKeys}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	items := make([]{{$sub.CodecPrefix}}WireItem, 0, len(rawItems))
+	seen := make(map[int]struct{}, len(rawItems))
+	for position, rawItem := range rawItems {
+		itemLocation := fmt.Sprintf("%s {{.Name}} item %d", location, position+1)
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(rawItem, &object); err != nil || object == nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", itemLocation+" was not an object.")
+			continue
+		}
+		unknown := make([]string, 0)
+		for key := range object {
+			if _, ok := knownKeys[key]; !ok {
+				unknown = append(unknown, key)
+			}
+		}
+		sort.Strings(unknown)
+		if len(unknown) != 0 {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item field", itemLocation+" contained unsupported keys: "+strings.Join(unknown, ", ")+".")
+			continue
+		}
+		index, ok := {{$r.LowerCamel}}DecodeIndex(object["idx"], itemLocation, "int", diagnostics)
+		if !ok {
+			continue
+		}
+		if _, duplicate := seen[index]; duplicate {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s used duplicate idx %d.", itemLocation, index))
+			continue
+		}
+		seen[index] = struct{}{}
+		item := {{$sub.CodecPrefix}}WireItem{Index: index}
+		{{- range $sub.Fields}}
+		{{- if eq .Kind "boolean"}}
+		{{- if .SourceRequired}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}DecodeRequiredBool(object["{{.Name}}"], itemLocation+" {{.Name}}", diagnostics)
+		if !ok { continue }
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else if .ProviderDefaultBool}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.Name}}", {{.AcceptWireNull}}, itemLocation, diagnostics)
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeBoolWithDefault(object, "{{.Name}}", itemLocation, {{providerBoolDefault .ProviderDefaultBool}}, diagnostics)
+		{{- else}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.Name}}", {{.AcceptWireNull}}, itemLocation, diagnostics)
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalBool(object, "{{.Name}}", itemLocation, diagnostics)
+		{{- end}}
+		{{- else if eq .Kind "integer"}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.Name}}", {{.AcceptWireNull}}, itemLocation, diagnostics)
+		{{- if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}DecodeRequiredInt64(object["{{.Name}}"], itemLocation+" {{.Name}}", diagnostics)
+		if !ok { continue }
+		item.{{.GoName}} = {{.Name}}Value
+		{{- $reqCheck := boundCheck .HasMin .HasMax .Min .Max (printf "%sValue" .Name)}}
+		{{- if $reqCheck}}
+		if {{$reqCheck}} {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} was not {{.BoundMessage}}.", itemLocation))
+		}
+		{{- end}}
+		{{- else}}
+		{{- if .ProviderDefaultInt}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalInt64WithDefault(object, "{{.Name}}", itemLocation, {{providerIntDefault .ProviderDefaultInt}}, diagnostics)
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalInt64(object, "{{.Name}}", itemLocation, diagnostics)
+		{{- end}}
+		{{- $optCheck := boundCheck .HasMin .HasMax .Min .Max (printf "item.%s" .GoName)}}
+		{{- if $optCheck}}
+		if _, ok := object["{{.Name}}"]; ok && !{{$r.LowerCamel}}JSONNull(object["{{.Name}}"]) && ({{$optCheck}}) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} was not {{.BoundMessage}}.", itemLocation))
+		}
+		{{- end}}
+		{{- end}}
+		{{- else if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}DecodeRequiredString(object["{{.Name}}"], itemLocation+" {{.Name}}", diagnostics)
+		if !ok { continue }
+		{{$r.LowerCamel}}ValidateString(itemLocation, " {{.Name}}", {{.Name}}Value, {{.MinLength}}, {{.MaxLength}}, diagnostics)
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}({{.Name}}Value) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", itemLocation+" {{.Name}} was not one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		{{- if .PatternVar}}
+		if !{{.PatternVar}}.MatchString({{.Name}}Value) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", itemLocation+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+		}
+		{{- end}}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.Name}}", {{.AcceptWireNull}}, itemLocation, diagnostics)
+		{{- if .ProviderDefaultString}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalStringWithDefault(object, "{{.Name}}", itemLocation, {{.MaxLength}}, {{providerStringDefault .ProviderDefaultString}}, diagnostics)
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalString(object, "{{.Name}}", itemLocation, {{.MaxLength}}, diagnostics)
+		{{- end}}
+		{{- if .EnumMap}}
+		if item.{{.GoName}} != nil && !{{.EnumValid}}(*item.{{.GoName}}) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", itemLocation+" {{.Name}} was not one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		{{- if .PatternVar}}
+		if item.{{.GoName}} != nil && !{{.PatternVar}}.MatchString(*item.{{.GoName}}) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", itemLocation+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+		}
+		{{- end}}
+		{{- end}}
+		{{- end}}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool { return items[i].Index < items[j].Index })
+	return &items
+}
+
+func {{$coll.CodecPrefix}}{{.GoName}}WrapperValue(itemsRaw json.RawMessage) (types.Object, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	if len(itemsRaw) == 0 {
+		return types.ObjectNull({{$sub.WrapperAttributeTypes}}), diagnostics
+	}
+	var items []{{$sub.CodecPrefix}}WireItem
+	if err := json.Unmarshal(itemsRaw, &items); err != nil {
+		return types.ObjectNull({{$sub.WrapperAttributeTypes}}), diagnostics
+	}
+	elements := make([]attr.Value, 0, len(items))
+	for _, item := range items {
+		objectValues := map[string]attr.Value{}
+		{{- range $sub.Fields}}
+		{{- if eq .Kind "boolean"}}
+		objectValues["{{.Name}}"] = types.BoolValue(item.{{.GoName}})
+		{{- else if eq .Kind "integer"}}
+		objectValues["{{.Name}}"] = types.Int64Value(item.{{.GoName}})
+		{{- else if .Required}}
+		objectValues["{{.Name}}"] = types.StringValue(item.{{.GoName}})
+		{{- else}}
+		{{.Name}}Value := types.StringNull()
+		if item.{{.GoName}} != nil {
+			{{.Name}}Value = types.StringValue(*item.{{.GoName}})
+		}
+		objectValues["{{.Name}}"] = {{.Name}}Value
+		{{- end}}
+		{{- end}}
+		object, objectDiagnostics := types.ObjectValue({{$sub.ItemAttributeTypes}}, objectValues)
+		diagnostics.Append(objectDiagnostics...)
+		elements = append(elements, object)
+	}
+	list, listDiagnostics := types.ListValue(types.ObjectType{AttrTypes: {{$sub.ItemAttributeTypes}}}, elements)
+	diagnostics.Append(listDiagnostics...)
+	wrapper, wrapperDiagnostics := types.ObjectValue({{$sub.WrapperAttributeTypes}}, map[string]attr.Value{"item": list})
+	diagnostics.Append(wrapperDiagnostics...)
+	return wrapper, diagnostics
+}
+{{- end}}
+{{- if .ItemScalarStringArray}}
+{{$iso := .ItemScalarStringArray}}
+func {{$coll.CodecPrefix}}BuildItemStringArray{{.GoName}}(ctx context.Context, configured, planned types.Object, location string, diagnostics *diag.Diagnostics) {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList {
+	if configured.IsNull() {
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{}
+	}
+	if configured.IsUnknown() || planned.IsNull() || planned.IsUnknown() {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} ownership wrapper must be known during apply.")
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{}
+	}
+	var configWrapper, planWrapper {{$r.LowerCamel}}WrapperModel
+	diagnostics.Append(configured.As(ctx, &configWrapper, basetypes.ObjectAsOptions{})...)
+	diagnostics.Append(planned.As(ctx, &planWrapper, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() {
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{}
+	}
+	if configWrapper.Items.IsNull() {
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{Set: true, Items: []string{}}
+	}
+	var configItems []{{$iso.CodecPrefix}}ItemModel
+	diagnostics.Append(configWrapper.Items.ElementsAs(ctx, &configItems, false)...)
+	if diagnostics.HasError() {
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{}
+	}
+	// planItems carries the resolved plan values; when a config item attribute
+	// is unknown (a computed reference resolved by apply time), fall back to the
+	// planned value so valid computed headers are not rejected. Mirrors the
+	// other generated item build helpers.
+	var planItems []{{$iso.CodecPrefix}}ItemModel
+	diagnostics.Append(planWrapper.Items.ElementsAs(ctx, &planItems, false)...)
+	if diagnostics.HasError() {
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{}
+	}
+	{{- if $iso.MaxItemsVar}}
+	if len(configItems) > {{$iso.MaxItemsVar}} {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} may contain at most %d item blocks.", location, {{$iso.MaxItemsVar}}))
+		return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{}
+	}
+	{{- end}}
+	items := make([]string, 0, len(configItems))
+	for index, ci := range configItems {
+		headerValue := ci.{{$iso.ItemGoName}}
+		if headerValue.IsUnknown() && index < len(planItems) && !planItems[index].{{$iso.ItemGoName}}.IsUnknown() {
+			headerValue = planItems[index].{{$iso.ItemGoName}}
+		}
+		if headerValue.IsNull() || headerValue.IsUnknown() {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} item {{$iso.ItemAttribute}} is required.")
+			continue
+		}
+		value := headerValue.ValueString()
+		{{- if $iso.EnumMap}}
+		if !{{$iso.EnumValid}}(value) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", location+" {{.Name}} item {{$iso.ItemAttribute}} must be one of {{enumProse $iso.Enum}}.")
+			continue
+		}
+		{{- end}}
+		{{- if gt $iso.ItemMaxLength 0}}
+		if utf8.RuneCountInString(value) > {{$iso.ItemMaxLength}} {
+			diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s {{.Name}} item {{$iso.ItemAttribute}} must be at most %d UTF-8 characters.", location, {{$iso.ItemMaxLength}}))
+			continue
+		}
+		{{- end}}
+		items = append(items, value)
+	}
+	return {{$coll.CodecPrefix}}{{.GoName}}StringArrayOwnedList{Set: true, Items: items}
+}
+
+func {{$coll.CodecPrefix}}DecodeItemStringArray{{.GoName}}(raw json.RawMessage, location string, diagnostics *diag.Diagnostics) []string {
+	if len(raw) == 0 {
+		return nil
+	}
+	if {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was null but the reviewed array is not nullable.")
+		return nil
+	}
+	var rawItems []json.RawMessage
+	if err := json.Unmarshal(raw, &rawItems); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not an array of strings.")
+		return nil
+	}
+	items := make([]string, 0, len(rawItems))
+	for _, element := range rawItems {
+		// Reject JSON null elements: the item string is not nullable, so a null
+		// entry must fail closed rather than being coerced to an empty string.
+		if len(bytes.TrimSpace(element)) == 0 || {{$r.LowerCamel}}JSONNull(element) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" contained a null element, but the reviewed item string is not nullable.")
+			return nil
+		}
+		var v string
+		if err := json.Unmarshal(element, &v); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not an array of strings.")
+			return nil
+		}
+		items = append(items, v)
+	}
+	{{- if $iso.MaxItemsVar}}
+	if len(items) > {{$iso.MaxItemsVar}} {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s contained more than %d items.", location, {{$iso.MaxItemsVar}}))
+		return nil
+	}
+	{{- end}}
+	{{- if $iso.EnumMap}}
+	for _, v := range items {
+		if !{{$iso.EnumValid}}(v) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" contained a string that was not one of {{enumProse $iso.Enum}}.")
+		}
+	}
+	{{- end}}
+	{{- if gt $iso.ItemMaxLength 0}}
+	for _, v := range items {
+		if utf8.RuneCountInString(v) > {{$iso.ItemMaxLength}} {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s contained a string longer than %d UTF-8 characters.", location, {{$iso.ItemMaxLength}}))
+		}
+	}
+	{{- end}}
+	return items
+}
+
+func {{$coll.CodecPrefix}}{{.GoName}}ItemStringArrayWrapperValue(itemsRaw json.RawMessage) (types.Object, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	if len(itemsRaw) == 0 {
+		return types.ObjectNull({{$iso.WrapperAttributeTypes}}), diagnostics
+	}
+	var items []string
+	if err := json.Unmarshal(itemsRaw, &items); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained a non-array {{$iso.WireName}} value.")
+		return types.ObjectNull({{$iso.WrapperAttributeTypes}}), diagnostics
+	}
+	elements := make([]attr.Value, 0, len(items))
+	for _, v := range items {
+		{{- if $iso.EnumMap}}
+		if !{{$iso.EnumValid}}(v) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "An item string array contained a string that was not one of {{enumProse $iso.Enum}}.")
+			continue
+		}
+		{{- end}}
+		object, objectDiagnostics := types.ObjectValue({{$iso.ItemAttributeTypes}}, map[string]attr.Value{"{{$iso.ItemAttribute}}": types.StringValue(v)})
+		diagnostics.Append(objectDiagnostics...)
+		elements = append(elements, object)
+	}
+	list, listDiagnostics := types.ListValue(types.ObjectType{AttrTypes: {{$iso.ItemAttributeTypes}}}, elements)
+	diagnostics.Append(listDiagnostics...)
+	wrapper, wrapperDiagnostics := types.ObjectValue({{$iso.WrapperAttributeTypes}}, map[string]attr.Value{"item": list})
+	diagnostics.Append(wrapperDiagnostics...)
+	return wrapper, diagnostics
+}
+{{- end}}
+{{- end}}
+
+{{- end}}
+{{- end}}
+
+{{- if $r.HasStringScalars}}
+func {{$r.LowerCamel}}ConfiguredString(configured, planned types.String, name string, diagnostics diag.Diagnostics) (client.Optional[string], diag.Diagnostics) {
+	value, valueDiagnostics := wafmodule.ConfiguredString(configured, planned, name)
+	diagnostics.Append(valueDiagnostics...)
+	return value, diagnostics
+}
+{{- end}}
+{{- if $r.HasInt64Scalars}}
+func {{$r.LowerCamel}}ConfiguredInt64(configured, planned types.Int64, name string, diagnostics diag.Diagnostics) (client.Optional[int64], diag.Diagnostics) {
+	value, valueDiagnostics := wafmodule.ConfiguredInt64(configured, planned, name)
+	diagnostics.Append(valueDiagnostics...)
+	return value, diagnostics
+}
+{{- end}}
+{{- if $r.HasBoolScalars}}
+func {{$r.LowerCamel}}ConfiguredBool(configured, planned types.Bool, name string, diagnostics diag.Diagnostics) (client.Optional[bool], diag.Diagnostics) {
+	value, valueDiagnostics := wafmodule.ConfiguredBool(configured, planned, name)
+	diagnostics.Append(valueDiagnostics...)
+	return value, diagnostics
+}
+{{- end}}
+
+{{- if or $r.HasFilter $r.HasDefaultTrue}}
+func {{$r.LowerCamel}}PlannedBool(configured, planned types.Bool, name string, defaultValue bool, diagnostics *diag.Diagnostics) (bool, bool) {
+	if configured.IsNull() {
+		return defaultValue, true
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item", "The configured "+name+" is still unknown during apply.")
+			return false, false
+		}
+		return planned.ValueBool(), true
+	}
+	return configured.ValueBool(), true
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}PlannedRequiredString(configured, planned types.String, name string, diagnostics *diag.Diagnostics) (string, bool) {
+	if configured.IsNull() {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", "The required "+name+" is null.")
+		return "", false
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item", "The configured "+name+" is still unknown during apply.")
+			return "", false
+		}
+		return planned.ValueString(), true
+	}
+	return configured.ValueString(), true
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}PlannedOptionalString(configured, planned types.String, name string, maximum int, diagnostics *diag.Diagnostics) *string {
+	if configured.IsNull() {
+		// Omission preserves the prior state value carried into the plan by
+		// use_state_for_unknown; a null planned value (e.g. a clear-string
+		// modifier) drops the field so the backend removes it.
+		if !planned.IsNull() && !planned.IsUnknown() {
+			value := planned.ValueString()
+			if maximum > 0 && utf8.RuneCountInString(value) > maximum {
+				diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("The %s exceeds %d UTF-8 characters.", name, maximum))
+			}
+			return &value
+		}
+		return nil
+	}
+	value := ""
+	if configured.IsUnknown() {
+		if planned.IsNull() {
+			return nil
+		}
+		if planned.IsUnknown() {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item", "The configured "+name+" is still unknown during apply.")
+			return nil
+		}
+		value = planned.ValueString()
+	} else {
+		value = configured.ValueString()
+	}
+	if maximum > 0 && utf8.RuneCountInString(value) > maximum {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("The %s exceeds %d UTF-8 characters.", name, maximum))
+	}
+	return &value
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}PlannedRequiredBool(configured, planned types.Bool, name string, diagnostics *diag.Diagnostics) (bool, bool) {
+	if configured.IsNull() {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", "The required "+name+" is null.")
+		return false, false
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item", "The configured "+name+" is still unknown during apply.")
+			return false, false
+		}
+		return planned.ValueBool(), true
+	}
+	return configured.ValueBool(), true
+}
+
+func {{$r.LowerCamel}}PlannedOptionalBool(configured, planned types.Bool, name string, diagnostics *diag.Diagnostics) (bool, bool) {
+	if configured.IsNull() {
+		// Omission preserves the prior state value carried into the plan by
+		// use_state_for_unknown; fall back to false only when no known planned
+		// value exists.
+		if !planned.IsNull() && !planned.IsUnknown() {
+			return planned.ValueBool(), true
+		}
+		return false, true
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			return false, true
+		}
+		return planned.ValueBool(), true
+	}
+	return configured.ValueBool(), true
+}
+
+func {{$r.LowerCamel}}PlannedNestedBool(configured, planned types.Bool) bool {
+	if configured.IsNull() {
+		// Omission preserves the prior state value; fall back to false only
+		// when no known planned value exists.
+		if !planned.IsNull() && !planned.IsUnknown() {
+			return planned.ValueBool()
+		}
+		return false
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			return false
+		}
+		return planned.ValueBool()
+	}
+	return configured.ValueBool()
+}
+
+func {{$r.LowerCamel}}PlannedNestedString(configured, planned types.String, defaultValue string) string {
+	if configured.IsNull() {
+		// Omission preserves the prior state value; fall back to the reviewed
+		// default only when no known planned value exists.
+		if !planned.IsNull() && !planned.IsUnknown() {
+			return planned.ValueString()
+		}
+		return defaultValue
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			return defaultValue
+		}
+		return planned.ValueString()
+	}
+	return configured.ValueString()
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}PlannedRequiredInt64(configured, planned types.Int64, name string, diagnostics *diag.Diagnostics) (int64, bool) {
+	if configured.IsNull() {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", "The required "+name+" is null.")
+		return 0, false
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item", "The configured "+name+" is still unknown during apply.")
+			return 0, false
+		}
+		return planned.ValueInt64(), true
+	}
+	return configured.ValueInt64(), true
+}
+
+func {{$r.LowerCamel}}PlannedOptionalInt64(configured, planned types.Int64, name string, defaultValue int64, diagnostics *diag.Diagnostics) int64 {
+	if configured.IsNull() {
+		// Omission preserves the prior state value carried into the plan by
+		// use_state_for_unknown; fall back to the reviewed default only when no
+		// known planned value exists (first create of a new item).
+		if !planned.IsNull() && !planned.IsUnknown() {
+			return planned.ValueInt64()
+		}
+		return defaultValue
+	}
+	if configured.IsUnknown() {
+		if planned.IsNull() || planned.IsUnknown() {
+			return defaultValue
+		}
+		return planned.ValueInt64()
+	}
+	return configured.ValueInt64()
+}
+
+func {{$r.LowerCamel}}DecodeOptionalInt64(object map[string]json.RawMessage, key, location string, diagnostics *diag.Diagnostics) int64 {
+	raw, ok := object[key]
+	if !ok || {{$r.LowerCamel}}JSONNull(raw) {
+		return 0
+	}
+	var number json.Number
+	if err := json.Unmarshal(raw, &number); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not an integer.")
+		return 0
+	}
+	value, err := number.Int64()
+	if err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not an integer.")
+		return 0
+	}
+	return value
+}
+
+// DecodeOptionalInt64WithDefault decodes an optional integer item field,
+// substituting the reviewed default when the successful GET omits the key or
+// returns null. This mirrors the encode path (PlannedOptionalInt64 sends the
+// reviewed default when the practitioner omits the field), so state carries the
+// reviewed default rather than 0 and a later update does not reuse a stale 0.
+func {{$r.LowerCamel}}DecodeOptionalInt64WithDefault(object map[string]json.RawMessage, key, location string, defaultValue int64, diagnostics *diag.Diagnostics) int64 {
+	raw, ok := object[key]
+	if !ok || {{$r.LowerCamel}}JSONNull(raw) {
+		return defaultValue
+	}
+	var number json.Number
+	if err := json.Unmarshal(raw, &number); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not an integer.")
+		return 0
+	}
+	value, err := number.Int64()
+	if err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not an integer.")
+		return 0
+	}
+	return value
+}
+{{- end}}
+
+func {{$r.LowerCamel}}DecodeScalars(result client.WAFModuleResult) {{$r.DecodeScalarsSig}} {
+	var diagnostics diag.Diagnostics
+	scalarsResult := {{$r.ScalarsStructZero}}
+	{{- range .Resource.Scalars}}
+	{{$scalar := .}}
+	{{- if eq .Kind "string"}}
+	{{.Name}}Raw, ok := result.Configs["{{.Name}}"]
+	{{- if .Required}}
+	if !ok || {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result did not contain a non-null {{.Name}} string.")
+	} else {
+		var {{.Name}}Value string
+		{{- if .EnumMap}}
+		{{- if .WireAliases}}
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			{{- range .WireAliases}}
+			if {{$scalar.Name}}Value == {{.WireLiteral}} { {{$scalar.Name}}Value = {{.TerraformLiteral}} }
+			{{- end}}
+			if !{{.EnumValid}}({{.Name}}Value) {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+			} else {
+		{{- else}}
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil || !{{.EnumValid}}({{.Name}}Value) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+		{{- end}}
+			{{- else}}
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			{{- end}}
+			{{- if .MinLength}}
+			if utf8.RuneCountInString({{.Name}}Value) < {{.MinLength}} {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained {{.Name}} shorter than %d UTF-8 characters.", {{.MinLength}}))
+			}
+			{{- end}}
+			{{- if .MaxLength}}
+			if utf8.RuneCountInString({{.Name}}Value) > {{.MaxLength}} {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained {{.Name}} exceeding %d UTF-8 characters.", {{.MaxLength}}))
+			} else {
+			{{- end}}
+				{{- if .PatternVar}}
+				if !{{.PatternVar}}.MatchString({{.Name}}Value) {
+					diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained {{.Name}} " + {{printf "%q" .PatternMessage}})
+				} else {
+				{{- end}}
+					scalarsResult.{{.GoName}} = {{.Name}}Value
+				{{- if .PatternVar}}
+				}
+				{{- end}}
+			{{- if .MaxLength}}
+			}
+			{{- end}}
+		}
+		{{- if .WireAliases}}
+		}
+		{{- end}}
+	}
+	{{- else}}
+	if !ok {
+		{{- if .HasDefault}}
+		// Missing optional key with a reviewed default: decode to the default
+		// so a configured-default value does not perpetual-diff when the
+		// backend omits default-valued keys.
+		{{.Name}}Default := {{.DefaultLiteral}}
+		scalarsResult.{{.GoName}} = &{{.Name}}Default
+		{{- else}}
+		// Missing optional key: stable nil state.
+		scalarsResult.{{.GoName}} = nil
+		{{- end}}
+	} else if {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		{{- if or .AllowNull .AllowWireNull}}
+		scalarsResult.{{.GoName}} = nil
+		{{- else}}
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained null {{.Name}}, which the pinned schema does not mark nullable.")
+		{{- end}}
+	} else {
+		var {{.Name}}Value string
+		{{- if .EnumMap}}
+		{{- if .WireAliases}}
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			{{- range .WireAliases}}
+			if {{$scalar.Name}}Value == {{.WireLiteral}} { {{$scalar.Name}}Value = {{.TerraformLiteral}} }
+			{{- end}}
+			if !{{.EnumValid}}({{.Name}}Value) {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+			} else {
+		{{- else}}
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil || !{{.EnumValid}}({{.Name}}Value) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+		{{- end}}
+			{{- else}}
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+		{{- end}}
+			{{- if .MinLength}}
+			if utf8.RuneCountInString({{.Name}}Value) < {{.MinLength}} {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained {{.Name}} shorter than %d UTF-8 characters.", {{.MinLength}}))
+			}
+			{{- end}}
+			{{- if .MaxLength}}
+			if utf8.RuneCountInString({{.Name}}Value) > {{.MaxLength}} {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained {{.Name}} exceeding %d UTF-8 characters.", {{.MaxLength}}))
+			} else {
+			{{- end}}
+				{{- if .PatternVar}}
+				if !{{.PatternVar}}.MatchString({{.Name}}Value) {
+					diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained {{.Name}} " + {{printf "%q" .PatternMessage}})
+				} else {
+				{{- end}}
+					scalarsResult.{{.GoName}} = &{{.Name}}Value
+				{{- if .PatternVar}}
+				}
+				{{- end}}
+			{{- if .MaxLength}}
+			}
+			{{- end}}
+		}
+		{{- if .WireAliases}}
+		}
+		{{- end}}
+	}
+	{{- end}}
+	{{- else if eq .Kind "boolean"}}
+	{{.Name}}Raw, ok := result.Configs["{{.Name}}"]
+	{{- if .Required}}
+	if !ok || {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result did not contain a non-null {{.Name}} boolean.")
+	} else {
+		var {{.Name}}Value bool
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			scalarsResult.{{.GoName}} = {{.Name}}Value
+		}
+	}
+	{{- else}}
+	if !ok {
+		{{- if .HasDefault}}
+		{{.Name}}Default := {{.DefaultLiteral}}
+		scalarsResult.{{.GoName}} = &{{.Name}}Default
+		{{- else}}
+		scalarsResult.{{.GoName}} = nil
+		{{- end}}
+	} else if {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		{{- if .AllowNull}}
+		scalarsResult.{{.GoName}} = nil
+		{{- else}}
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained null {{.Name}}, which the pinned schema does not mark nullable.")
+		{{- end}}
+	} else {
+		var {{.Name}}Value bool
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			scalarsResult.{{.GoName}} = &{{.Name}}Value
+		}
+	}
+	{{- end}}
+	{{- else if eq .Kind "integer"}}
+	{{.Name}}Raw, ok := result.Configs["{{.Name}}"]
+	{{- if .Required}}
+	if !ok || {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result did not contain a non-null {{.Name}} integer.")
+	} else {
+		var {{.Name}}Number json.Number
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Number); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			{{.Name}}Value, err := {{.Name}}Number.Int64()
+			if err != nil {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+			} {{- if .EnumMap}} else if !{{.EnumValid}}({{.Name}}Value) {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+			} {{- end}}{{- $check := boundCheck .DecodeHasMin .DecodeHasMax .DecodeMin .DecodeMax (printf "%sValue" .Name)}}{{- if $check}} else if {{$check}} {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained {{.Name}} = %d, not {{.DecodeBoundMessage}}.", {{.Name}}Value))
+			} {{- end}} else {
+				scalarsResult.{{.GoName}} = {{.Name}}Value
+			}
+		}
+	}
+	{{- else}}
+	if !ok {
+		{{- if .HasDefault}}
+		{{.Name}}Default := {{.DefaultLiteral}}
+		scalarsResult.{{.GoName}} = &{{.Name}}Default
+		{{- else}}
+		scalarsResult.{{.GoName}} = nil
+		{{- end}}
+	} else if {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		{{- if .AllowNull}}
+		scalarsResult.{{.GoName}} = nil
+		{{- else}}
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained null {{.Name}}, which the pinned schema does not mark nullable.")
+		{{- end}}
+	} else {
+		var {{.Name}}Number json.Number
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Number); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+		} else {
+			{{.Name}}Value, err := {{.Name}}Number.Int64()
+			if err != nil {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+			} {{- if .EnumMap}} else if !{{.EnumValid}}({{.Name}}Value) {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained an invalid {{.Name}}.")
+			} {{- end}}{{- $check := boundCheck .DecodeHasMin .DecodeHasMax .DecodeMin .DecodeMax (printf "%sValue" .Name)}}{{- if $check}} else if {{$check}} {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained {{.Name}} = %d, not {{.DecodeBoundMessage}}.", {{.Name}}Value))
+			} {{- end}} else {
+				scalarsResult.{{.GoName}} = &{{.Name}}Value
+			}
+		}
+	}
+	{{- end}}
+	{{- else if eq .Kind "object"}}
+	{{.Name}}Raw, ok := result.Configs["{{.Name}}"]
+	if ok && len({{.Name}}Raw) > 0 && !{{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		scalarsResult.{{.GoName}} = {{.Name}}Raw
+	} else {
+		scalarsResult.{{.GoName}} = nil
+	}
+	{{- end}}
+	{{- end}}
+	{{- if $r.CrossFieldRules}}
+	if !diagnostics.HasError() {
+		diagnostics.Append({{$r.LowerCamel}}ValidateDecodedCrossFields(scalarsResult)...)
+	}
+	{{- end}}
+	return {{$r.DecodeScalarsReturn}}
+}
+
+{{- if $r.HasCollections}}
+{{- range .Resource.Collections}}
+{{$coll := .}}
+func {{$r.LowerCamel}}Decode{{.GoName}}(raw json.RawMessage) ({{.CodecPrefix}}OwnedList, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	if len(raw) == 0 {
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	if {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained null {{.WireName}} instead of an array.")
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	var rawItems []json.RawMessage
+	if err := json.Unmarshal(raw, &rawItems); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained a non-array {{.WireName}} value.")
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	{{- if .MaxItemsVar}}
+	if len(rawItems) > {{.MaxItemsVar}} {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained more than %d {{.WireName}} items.", {{.MaxItemsVar}}))
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	{{- end}}
+
+	items := make([]{{.CodecPrefix}}WireItem, 0, len(rawItems))
+	{{- if not .Unindexed}}
+	seen := make(map[int]struct{}, len(rawItems))
+	{{- end}}
+	knownKeys := map[string]struct{}{
+		{{- range .Item.KnownKeys}}
+		"{{.}}": {},
+		{{- end}}
+	}
+	for position, rawItem := range rawItems {
+		location := fmt.Sprintf("{{.WireName}} item %d", position+1)
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(rawItem, &object); err != nil || object == nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not an object.")
+			continue
+		}
+		unknown := make([]string, 0)
+		for key := range object {
+			if _, ok := knownKeys[key]; !ok {
+				unknown = append(unknown, key)
+			}
+		}
+		sort.Strings(unknown)
+		if len(unknown) != 0 {
+			diagnostics.AddError("Unknown {{$r.OperationName}} item field", location+" contained unsupported keys: "+strings.Join(unknown, ", ")+".")
+			continue
+		}
+
+		{{- if not .Unindexed}}
+		index, ok := {{$r.LowerCamel}}DecodeIndex(object["idx"], location, "{{.IdxKind}}", &diagnostics)
+		if !ok {
+			continue
+		}
+		if _, duplicate := seen[index]; duplicate {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s used duplicate idx %d.", location, index))
+			continue
+		}
+		seen[index] = struct{}{}
+		{{- if eq .IdxKind "string"}}
+		item := {{.CodecPrefix}}WireItem{Index: {{$r.LowerCamel}}Idx(index)}
+		{{- else}}
+		item := {{.CodecPrefix}}WireItem{Index: index}
+		{{- end}}
+		{{- else}}
+		item := {{.CodecPrefix}}WireItem{}
+		{{- end}}
+		{{- range .Item.Fields}}
+		{{- if eq .Kind "boolean"}}
+		{{- if .SourceRequired}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}DecodeRequiredBool(object["{{.WireName}}"], location+" {{.Name}}", &diagnostics)
+		if !ok {
+			continue
+		}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else if .ProviderDefaultBool}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.WireName}}", {{.AcceptWireNull}}, location, &diagnostics)
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeBoolWithDefault(object, "{{.WireName}}", location, {{providerBoolDefault .ProviderDefaultBool}}, &diagnostics)
+		{{- else}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.WireName}}", {{.AcceptWireNull}}, location, &diagnostics)
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalBool(object, "{{.WireName}}", location, &diagnostics)
+		{{- end}}
+		{{- else if eq .Kind "object"}}
+		item.{{.GoName}} = {{$coll.CodecPrefix}}DecodeNested{{.GoName}}(object["{{.WireName}}"], location+" {{.Name}}", {{.Required}}, &diagnostics)
+		{{- else if eq .Kind "array"}}
+		// Nested sub-item arrays are not decoded here; they are decoded
+		// separately in the flatten when owned (fail-closed) and skipped in
+		// ValidateResult (opaque when unowned).
+		{{- else if eq .Kind "string_array"}}
+		// Item-level scalar-string-arrays are not decoded here; they are decoded
+		// separately in the flatten when owned (fail-closed) and skipped in
+		// ValidateResult (opaque when unowned).
+		{{- else if eq .Kind "integer"}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.WireName}}", {{.AcceptWireNull}}, location, &diagnostics)
+		{{- if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}DecodeRequiredInt64(object["{{.WireName}}"], location+" {{.Name}}", &diagnostics)
+		if !ok { continue }
+		item.{{.GoName}} = {{.Name}}Value
+		{{- $reqCheck := boundCheck .HasMin .HasMax .Min .Max (printf "%sValue" .Name)}}
+		{{- if $reqCheck}}
+		if {{$reqCheck}} {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} was not {{.BoundMessage}}.", location))
+		}
+		{{- end}}
+		{{- else}}
+		{{- if .ProviderDefaultInt}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalInt64WithDefault(object, "{{.WireName}}", location, {{providerIntDefault .ProviderDefaultInt}}, &diagnostics)
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalInt64(object, "{{.WireName}}", location, &diagnostics)
+		{{- end}}
+		{{- $optCheck := boundCheck .HasMin .HasMax .Min .Max (printf "item.%s" .GoName)}}
+		{{- if $optCheck}}
+		if _, ok := object["{{.WireName}}"]; ok && !{{$r.LowerCamel}}JSONNull(object["{{.WireName}}"]) && ({{$optCheck}}) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} was not {{.BoundMessage}}.", location))
+		}
+		{{- end}}
+		{{- end}}
+		{{- else if .Required}}
+		{{.Name}}Value, ok := {{$r.LowerCamel}}DecodeRequiredString(object["{{.WireName}}"], location+" {{.Name}}", &diagnostics)
+		if !ok {
+			continue
+		}
+		{{$r.LowerCamel}}ValidateString(location, " {{.Name}}", {{.Name}}Value, {{.MinLength}}, {{.MaxLength}}, &diagnostics)
+		{{- if .PatternVar}}
+		{{$r.LowerCamel}}ValidatePattern(location, " {{.Name}}", {{.Name}}Value, {{.PatternVar}}, {{printf "%q" .PatternMessage}}, &diagnostics)
+		{{- end}}
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}({{.Name}}Value) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		item.{{.GoName}} = {{.Name}}Value
+		{{- else}}
+		{{$r.LowerCamel}}RejectItemNullUnlessNullable(object, "{{.WireName}}", {{.AcceptWireNull}}, location, &diagnostics)
+		{{- if .ProviderDefaultString}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalStringWithDefault(object, "{{.WireName}}", location, {{.MaxLength}}, {{providerStringDefault .ProviderDefaultString}}, &diagnostics)
+		{{- else}}
+		item.{{.GoName}} = {{$r.LowerCamel}}DecodeOptionalString(object, "{{.WireName}}", location, {{.MaxLength}}, &diagnostics)
+		{{- end}}
+		{{- if .EnumMap}}
+		if item.{{.GoName}} != nil && !{{.EnumValid}}(*item.{{.GoName}}) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		{{- if .PatternVar}}
+		if item.{{.GoName}} != nil && !{{.PatternVar}}.MatchString(*item.{{.GoName}}) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} " + {{printf "%q" .PatternMessage}})
+		}
+		{{- end}}
+		{{- end}}
+		{{- end}}
+		items = append(items, item)
+	}
+	if diagnostics.HasError() {
+		return {{.CodecPrefix}}OwnedList{}, diagnostics
+	}
+	{{- if not .Unindexed}}
+	sort.Slice(items, func(i, j int) bool { return items[i].Index < items[j].Index })
+	{{- end}}
+	return {{.CodecPrefix}}OwnedList{Set: true, Items: items}, diagnostics
+}
+
+{{- range .Item.Fields}}
+{{- if .ObjectFields}}
+func {{$coll.CodecPrefix}}DecodeNested{{.GoName}}(raw json.RawMessage, location string, required bool, diagnostics *diag.Diagnostics) *{{$coll.CodecPrefix}}{{.GoName}}Wire {
+	if len(raw) == 0 {
+		if required {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was missing.")
+		}
+		return nil
+	}
+	if {{$r.LowerCamel}}JSONNull(raw) {
+		if required {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was null.")
+		}
+		return nil
+	}
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not an object.")
+		return nil
+	}
+	unknown := make([]string, 0)
+	for key := range object {
+		if _, ok := {{$coll.CodecPrefix}}{{.GoName}}KnownKeys[key]; !ok {
+			unknown = append(unknown, key)
+		}
+	}
+	sort.Strings(unknown)
+	if len(unknown) != 0 {
+		diagnostics.AddError("Unknown {{$r.OperationName}} item field", location+" contained unsupported keys: "+strings.Join(unknown, ", ")+".")
+		return nil
+	}
+	wire := &{{$coll.CodecPrefix}}{{.GoName}}Wire{}
+	{{- range .ObjectFields}}
+	{{- if eq .Kind "boolean"}}
+	{{.Name}}Raw, ok := object["{{.Name}}"]
+	{{- if .Required}}
+	if !ok || {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was missing or null.")
+		return nil
+	}
+	var {{.Name}}Value bool
+	if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not a boolean.")
+		return nil
+	}
+	wire.{{.GoName}} = {{.Name}}Value
+	{{- else}}
+	if !ok {
+		// Missing optional nested boolean: omit (Go zero value).
+	} else if {{$r.LowerCamel}}JSONNull({{.Name}}Raw) {
+		{{- if .AcceptWireNull}}
+		// Explicit null accepted for nullable optional nested boolean.
+		{{- else}}
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was null, which the pinned schema does not mark nullable.")
+		return nil
+		{{- end}}
+	} else {
+		var {{.Name}}Value bool
+		if err := json.Unmarshal({{.Name}}Raw, &{{.Name}}Value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not a boolean.")
+			return nil
+		}
+		wire.{{.GoName}} = {{.Name}}Value
+	}
+	{{- end}}
+	{{- else}}
+	{{.Name}}StringRaw, {{.Name}}Ok := object["{{.Name}}"]
+	if {{.Name}}Ok {
+		if {{$r.LowerCamel}}JSONNull({{.Name}}StringRaw) {
+			{{- if .AcceptWireNull}}
+			// Explicit null accepted for nullable optional nested string.
+			{{- else if .Required}}
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was null.")
+			{{- else}}
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was null, which the pinned schema does not mark nullable.")
+			{{- end}}
+		} else {
+			var {{.Name}}StringValue string
+			if err := json.Unmarshal({{.Name}}StringRaw, &{{.Name}}StringValue); err != nil {
+				diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not a string.")
+			} else {
+				{{- if .MinLength}}
+				if utf8.RuneCountInString({{.Name}}StringValue) < {{.MinLength}} {
+					diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} was shorter than %d UTF-8 characters.", location, {{.MinLength}}))
+				}
+				{{- end}}
+				{{- if .MaxLength}}
+				if utf8.RuneCountInString({{.Name}}StringValue) > {{.MaxLength}} {
+					diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s {{.Name}} exceeded %d UTF-8 characters.", location, {{.MaxLength}}))
+				}
+				{{- end}}
+				{{- if .EnumMap}}
+				if !{{.EnumValid}}({{.Name}}StringValue) {
+					diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" {{.Name}} was not one of {{enumProse .Enum}}.")
+				}
+				{{- end}}
+				wire.{{.GoName}} = {{.Name}}StringValue
+			}
+		}
+	}
+	{{- end}}
+	{{- end}}
+	return wire
+}
+{{- end}}
+{{- end}}
+
+func {{$r.LowerCamel}}{{.GoName}}WrapperValue(owned {{.CodecPrefix}}OwnedList, subItemOwnedMasks map[string][]bool) (types.Object, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	if !owned.Set {
+		return types.ObjectNull({{.WrapperAttributeTypes}}), diagnostics
+	}
+	elements := make([]attr.Value, 0, len(owned.Items))
+	for {{if .Item.Fields | hasSubItemArray}}itemIndex, {{else}}_, {{end}}item := range owned.Items {
+		objectValues := map[string]attr.Value{}
+		{{- range .Item.Fields}}
+		{{- if eq .Kind "boolean"}}
+		objectValues["{{.Name}}"] = types.BoolValue(item.{{.GoName}})
+		{{- else if eq .Kind "integer"}}
+		objectValues["{{.Name}}"] = types.Int64Value(item.{{.GoName}})
+		{{- else if eq .Kind "object"}}
+		{{$obj := .}}
+		{{$obj.Name}}Value := types.ObjectNull({{.ObjectAttrTypes}})
+		if item.{{.GoName}} != nil {
+			{{$obj.Name}}ObjectValues := map[string]attr.Value{}
+			{{- range .ObjectFields}}
+			{{- if eq .Kind "boolean"}}
+			{{$obj.Name}}ObjectValues["{{.Name}}"] = types.BoolValue(item.{{$obj.GoName}}.{{.GoName}})
+			{{- else}}
+			{{$obj.Name}}ObjectValues["{{.Name}}"] = types.StringValue(item.{{$obj.GoName}}.{{.GoName}})
+			{{- end}}
+			{{- end}}
+			{{$obj.Name}}Object, objectDiagnostics := types.ObjectValue({{.ObjectAttrTypes}}, {{$obj.Name}}ObjectValues)
+			diagnostics.Append(objectDiagnostics...)
+			{{$obj.Name}}Value = {{$obj.Name}}Object
+		}
+		objectValues["{{.Name}}"] = {{.Name}}Value
+		{{- else if eq .Kind "array"}}
+		{{$arr := .}}
+		{{$arr.Name}}Wrapper := types.ObjectNull({{$arr.SubItemArray.WrapperAttributeTypes}})
+		{{$arr.Name}}Mask := subItemOwnedMasks["{{.GoName}}"]
+		if itemIndex < len({{$arr.Name}}Mask) && {{$arr.Name}}Mask[itemIndex] {
+			{{$arr.Name}}WrapperComputed, {{$arr.Name}}WrapperDiags := {{$coll.CodecPrefix}}{{.GoName}}WrapperValue(item.{{.GoName}})
+			diagnostics.Append({{$arr.Name}}WrapperDiags...)
+			{{$arr.Name}}Wrapper = {{$arr.Name}}WrapperComputed
+		}
+		objectValues["{{.Name}}"] = {{$arr.Name}}Wrapper
+		{{- else if eq .Kind "string_array"}}
+		{{$arr := .}}
+		{{$arr.Name}}Wrapper := types.ObjectNull({{$arr.ItemScalarStringArray.WrapperAttributeTypes}})
+		if len(item.{{.GoName}}) > 0 {
+			{{$arr.Name}}WrapperComputed, {{$arr.Name}}WrapperDiags := {{$coll.CodecPrefix}}{{.GoName}}ItemStringArrayWrapperValue(item.{{.GoName}})
+			diagnostics.Append({{$arr.Name}}WrapperDiags...)
+			{{$arr.Name}}Wrapper = {{$arr.Name}}WrapperComputed
+		}
+		objectValues["{{.Name}}"] = {{$arr.Name}}Wrapper
+		{{- else if .Required}}
+		objectValues["{{.Name}}"] = types.StringValue(item.{{.GoName}})
+		{{- else}}
+		{{.Name}}Value := types.StringNull()
+		if item.{{.GoName}} != nil {
+			{{.Name}}Value = types.StringValue(*item.{{.GoName}})
+		}
+		objectValues["{{.Name}}"] = {{.Name}}Value
+		{{- end}}
+		{{- end}}
+		object, objectDiagnostics := types.ObjectValue({{.ItemAttributeTypes}}, objectValues)
+		diagnostics.Append(objectDiagnostics...)
+		elements = append(elements, object)
+	}
+	list, listDiagnostics := types.ListValue(types.ObjectType{AttrTypes: {{.ItemAttributeTypes}}}, elements)
+	diagnostics.Append(listDiagnostics...)
+	wrapper, wrapperDiagnostics := types.ObjectValue({{.WrapperAttributeTypes}}, map[string]attr.Value{"item": list})
+	diagnostics.Append(wrapperDiagnostics...)
+	return wrapper, diagnostics
+}
+
+{{- end}}
+{{- end}}
+func {{$r.LowerCamel}}DecodeIndex(raw json.RawMessage, location string, idxKind string, diagnostics *diag.Diagnostics) (int, bool) {
+	{{- if $r.HasStringIdx}}
+	if idxKind == "string" {
+		value, ok := {{$r.LowerCamel}}ParseIdx(raw, location)
+		if !ok {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" contained an idx that was not a positive integer.")
+			return 0, false
+		}
+		return value, true
+	}
+	{{- end}}
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || {{$r.LowerCamel}}JSONNull(trimmed) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" did not contain a non-null integer idx.")
+		return 0, false
+	}
+	if trimmed[0] != '-' && (trimmed[0] < '0' || trimmed[0] > '9') {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" contained a non-integer idx.")
+		return 0, false
+	}
+	var number json.Number
+	if err := json.Unmarshal(trimmed, &number); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" contained a non-integer idx.")
+		return 0, false
+	}
+	value64, err := number.Int64()
+	if err != nil || value64 <= 0 || int64(int(value64)) != value64 {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" contained an idx that was not a positive integer.")
+		return 0, false
+	}
+	return int(value64), true
+}
+
+{{- if $r.HasStringIdx}}
+// {{$r.LowerCamel}}Idx is the wire-only positional index for collections whose
+// pinned idx is a JSON string (e.g. rewriting_requests RewritingRule.idx). The
+// underlying type is int so sort, match, and duplicate detection stay numeric;
+// only the wire JSON encoding differs (a quoted string). The value is always a
+// positive integer rendered as a decimal string.
+type {{$r.LowerCamel}}Idx int
+
+func (n {{$r.LowerCamel}}Idx) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strconv.Itoa(int(n)))
+}
+
+// {{$r.LowerCamel}}ParseIdx decodes a wire idx that is a JSON string ("1") or
+// a JSON number (1) into a positive int. The backend pins idx as a string;
+// accepting a number too is a fail-closed convenience because backend echo
+// behavior is live-verified, not locally proven. Non-numeric, null,
+// non-positive, or out-of-int-range values return (0, false); the caller
+// decides whether to report a diagnostic (decode path) or skip silently
+// (GET/PUT merge path).
+func {{$r.LowerCamel}}ParseIdx(raw json.RawMessage, location string) (int, bool) {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || {{$r.LowerCamel}}JSONNull(trimmed) {
+		return 0, false
+	}
+	if trimmed[0] == '"' {
+		var s string
+		if err := json.Unmarshal(trimmed, &s); err != nil {
+			return 0, false
+		}
+		value, err := strconv.Atoi(s)
+		if err != nil || value <= 0 {
+			return 0, false
+		}
+		return value, true
+	}
+	var number json.Number
+	if err := json.Unmarshal(trimmed, &number); err != nil {
+		return 0, false
+	}
+	value64, err := number.Int64()
+	if err != nil || value64 <= 0 || int64(int(value64)) != value64 {
+		return 0, false
+	}
+	return int(value64), true
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}DecodeRequiredBool(raw json.RawMessage, location string, diagnostics *diag.Diagnostics) (bool, bool) {
+	if len(raw) == 0 || {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was missing or null.")
+		return false, false
+	}
+	var value bool
+	if err := json.Unmarshal(raw, &value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not a boolean.")
+		return false, false
+	}
+	return value, true
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}DecodeRequiredInt64(raw json.RawMessage, location string, diagnostics *diag.Diagnostics) (int64, bool) {
+	if len(raw) == 0 || {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was missing or null.")
+		return 0, false
+	}
+	var number json.Number
+	if err := json.Unmarshal(raw, &number); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not an integer.")
+		return 0, false
+	}
+	value, err := number.Int64()
+	if err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not an integer.")
+		return 0, false
+	}
+	return value, true
+}
+{{- end}}
+
+func {{$r.LowerCamel}}DecodeRequiredString(raw json.RawMessage, location string, diagnostics *diag.Diagnostics) (string, bool) {
+	if len(raw) == 0 || {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was missing or null.")
+		return "", false
+	}
+	var value string
+	if err := json.Unmarshal(raw, &value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not a string.")
+		return "", false
+	}
+	return value, true
+}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}DecodeOptionalString(object map[string]json.RawMessage, key, location string, maximum int, diagnostics *diag.Diagnostics) *string {
+	raw, ok := object[key]
+	if !ok || {{$r.LowerCamel}}JSONNull(raw) {
+		return nil
+	}
+	var value string
+	if err := json.Unmarshal(raw, &value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not a string or null.")
+		return nil
+	}
+	if maximum > 0 && utf8.RuneCountInString(value) > maximum {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s %s exceeded %d UTF-8 characters.", location, key, maximum))
+		return nil
+	}
+	return &value
+}
+
+// DecodeOptionalStringWithDefault decodes an optional string item field,
+// substituting the reviewed default when the successful GET omits the key or
+// returns null. This mirrors the encode path (which sends the reviewed default
+// when the practitioner omits the field), so the refreshed state carries the
+// reviewed default rather than null and a configured-default value does not
+// perpetual-diff when the backend omits default-valued keys.
+func {{$r.LowerCamel}}DecodeOptionalStringWithDefault(object map[string]json.RawMessage, key, location string, maximum int, defaultValue string, diagnostics *diag.Diagnostics) *string {
+	raw, ok := object[key]
+	if !ok || {{$r.LowerCamel}}JSONNull(raw) {
+		d := defaultValue
+		return &d
+	}
+	var value string
+	if err := json.Unmarshal(raw, &value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not a string or null.")
+		return nil
+	}
+	if maximum > 0 && utf8.RuneCountInString(value) > maximum {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("%s %s exceeded %d UTF-8 characters.", location, key, maximum))
+		return nil
+	}
+	return &value
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}DecodeOptionalBool(object map[string]json.RawMessage, key, location string, diagnostics *diag.Diagnostics) bool {
+	raw, ok := object[key]
+	if !ok || {{$r.LowerCamel}}JSONNull(raw) {
+		return false
+	}
+	var value bool
+	if err := json.Unmarshal(raw, &value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not a boolean or null.")
+		return false
+	}
+	return value
+}
+{{- end}}
+
+{{- if $r.HasCollections}}
+// {{$r.LowerCamel}}DecodeBoolWithDefault decodes an optional boolean item
+// field that carries a reviewed provider default. A missing key (omission) or
+// an accepted null decodes to the reviewed default (distinct from a required
+// field, which rejects a missing key). A present non-boolean value is rejected.
+func {{$r.LowerCamel}}DecodeBoolWithDefault(object map[string]json.RawMessage, key, location string, defaultValue bool, diagnostics *diag.Diagnostics) bool {
+	raw, ok := object[key]
+	if !ok || {{$r.LowerCamel}}JSONNull(raw) {
+		return defaultValue
+	}
+	var value bool
+	if err := json.Unmarshal(raw, &value); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was not a boolean or null.")
+		return defaultValue
+	}
+	return value
+}
+{{- end}}
+
+func {{$r.LowerCamel}}Ownership(ctx context.Context, template bool, ownership wafmodule.OwnershipContext) ({{$r.OwnershipStruct}}, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	if template {
+		return {{$r.OwnershipStructZero}}
+	}
+	if ownership.Source == wafmodule.OwnershipImported {
+		return {{$r.OwnershipStructImported}}
+	}
+	configsValue, ownershipDiagnostics := wafmodule.OwnershipConfigs(ctx, ownership)
+	diagnostics.Append(ownershipDiagnostics...)
+	if diagnostics.HasError() || configsValue.IsNull() {
+		return {{$r.OwnershipStructZero}}
+	}
+	if configsValue.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} ownership", "The configs ownership state was unknown while flattening.")
+		return {{$r.OwnershipStructZero}}
+	}
+	var configs {{$r.LowerCamel}}ConfigsModel
+	diagnostics.Append(configsValue.As(ctx, &configs, basetypes.ObjectAsOptions{})...)
+	return {{$r.OwnershipStructValues}}
+}
+
+{{- if $r.HasCollections}}
+func {{$r.LowerCamel}}ValidateString(location, label, value string, minimum, maximum int, diagnostics *diag.Diagnostics) {
+	if minimum > 0 && utf8.RuneCountInString(value) < minimum {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s%s must be at least %d UTF-8 characters.", location, label, minimum))
+	}
+	if maximum > 0 && utf8.RuneCountInString(value) > maximum {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s%s exceeds %d UTF-8 characters.", location, label, maximum))
+	}
+}
+{{- end}}
+
+{{- if $r.NeedsRegexp}}
+func {{$r.LowerCamel}}ValidatePattern(location, label, value string, pattern *regexp.Regexp, message string, diagnostics *diag.Diagnostics) {
+	if !pattern.MatchString(value) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} item", fmt.Sprintf("%s%s %s.", location, label, message))
+	}
+}
+{{- end}}
+
+{{- range .Resource.Scalars}}
+{{- if .EnumMap}}
+{{- if .IsIntEnum}}
+func {{.EnumValid}}(value int64) bool {
+	_, ok := {{.EnumMap}}[value]
+	return ok
+}
+{{- else}}
+func {{.EnumValid}}(value string) bool {
+	_, ok := {{.EnumMap}}[value]
+	return ok
+}
+{{- end}}
+{{- end}}
+{{- end}}
+{{- range .Resource.Collections}}
+{{$coll := .}}
+{{- range .Item.Fields}}
+{{- if .EnumMap}}
+func {{.EnumValid}}(value string) bool {
+	_, ok := {{.EnumMap}}[value]
+	return ok
+}
+{{- end}}
+{{- range .ObjectFields}}
+{{- if .EnumMap}}
+func {{.EnumValid}}(value string) bool {
+	_, ok := {{.EnumMap}}[value]
+	return ok
+}
+{{- end}}
+{{- end}}
+{{- if .SubItemArray}}
+{{- range .SubItemArray.Fields}}
+{{- if .EnumMap}}
+func {{.EnumValid}}(value string) bool {
+	_, ok := {{.EnumMap}}[value]
+	return ok
+}
+{{- end}}
+{{- end}}
+{{- end}}
+{{- end}}
+{{- end}}
+{{- range .Resource.ScalarStringArrays}}
+{{- if .EnumMap}}
+func {{.EnumValid}}(value string) bool {
+	_, ok := {{.EnumMap}}[value]
+	return ok
+}
+{{- end}}
+{{- end}}
+
+func {{$r.LowerCamel}}JSONNull(raw json.RawMessage) bool {
+	return bytes.Equal(bytes.TrimSpace(raw), []byte("null"))
+}
+
+{{- if $r.HasNestedCollections}}
+func {{$r.LowerCamel}}NestedConfigRaw(parent json.RawMessage, name string) json.RawMessage {
+	if len(parent) == 0 || {{$r.LowerCamel}}JSONNull(parent) {
+		return nil
+	}
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(parent, &object); err != nil || object == nil {
+		return nil
+	}
+	return object[name]
+}
+
+{{- end}}
+// RejectItemNullUnlessNullable reports a malformed-result diagnostic when a
+// collection-item field is present in the remote response as an explicit JSON
+// null but the pinned schema does not mark the field nullable. A missing key
+// is not rejected here (optional omission is handled by the decode helpers).
+func {{$r.LowerCamel}}RejectItemNullUnlessNullable(object map[string]json.RawMessage, key string, allowNull bool, location string, diagnostics *diag.Diagnostics) {
+	raw, ok := object[key]
+	if !ok {
+		return
+	}
+	if {{$r.LowerCamel}}JSONNull(raw) && !allowNull {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" "+key+" was null, which the pinned schema does not mark nullable.")
+	}
+}
+
+{{- range .Resource.ScalarStringArrays}}
+func {{$r.LowerCamel}}ValidateConfigured{{.GoName}}(ctx context.Context, wrapper types.Object) diag.Diagnostics {
+	var diagnostics diag.Diagnostics
+	if wrapper.IsNull() || wrapper.IsUnknown() {
+		return diagnostics
+	}
+	var model struct {
+		Items types.List `tfsdk:"item"`
+	}
+	diagnostics.Append(wrapper.As(ctx, &model, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() || model.Items.IsNull() || model.Items.IsUnknown() {
+		return diagnostics
+	}
+	{{- if .MaxItemsVar}}
+	if len(model.Items.Elements()) > {{.MaxItemsVar}} {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", fmt.Sprintf("{{.WireName}} may contain at most %d item blocks.", {{.MaxItemsVar}}))
+		return diagnostics
+	}
+	{{- end}}
+	var items []{{.LocalName}}ItemModel
+	diagnostics.Append(model.Items.ElementsAs(ctx, &items, false)...)
+	if diagnostics.HasError() {
+		return diagnostics
+	}
+	for index, item := range items {
+		location := fmt.Sprintf("{{.WireName}} item %d", index+1)
+		if item.{{.ItemGoName}}.IsNull() {
+			diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", location+" {{.ItemAttribute}} is required.")
+		{{- if .EnumMap}}
+		} else if !item.{{.ItemGoName}}.IsUnknown() && !{{.EnumValid}}(item.{{.ItemGoName}}.ValueString()) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", location+" {{.ItemAttribute}} must be one of {{enumProse .Enum}}.")
+		{{- end}}
+		}
+	}
+	return diagnostics
+}
+
+func {{$r.LowerCamel}}BuildConfigured{{.GoName}}(ctx context.Context, configured, planned types.Object, diagnostics diag.Diagnostics) ({{.LocalName}}OwnedList, diag.Diagnostics) {
+	if configured.IsNull() {
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	if configured.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The {{.WireName}} ownership wrapper must be known during apply.")
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	if planned.IsNull() || planned.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The planned {{.WireName}} ownership wrapper must be known during apply.")
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	var configWrapper, planWrapper struct {
+		Items types.List `tfsdk:"item"`
+	}
+	diagnostics.Append(configured.As(ctx, &configWrapper, basetypes.ObjectAsOptions{})...)
+	diagnostics.Append(planned.As(ctx, &planWrapper, basetypes.ObjectAsOptions{})...)
+	if diagnostics.HasError() {
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	if configWrapper.Items.IsUnknown() || planWrapper.Items.IsUnknown() {
+		diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The {{.WireName}} item blocks must be known during apply.")
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	if configWrapper.Items.IsNull() {
+		return {{.LocalName}}OwnedList{Set: true, Items: []string{}}, diagnostics
+	}
+	var configItems, planItems []{{.LocalName}}ItemModel
+	diagnostics.Append(configWrapper.Items.ElementsAs(ctx, &configItems, false)...)
+	if planWrapper.Items.IsNull() {
+		if len(configItems) != 0 {
+			diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", "The planned item list unexpectedly became null.")
+		}
+		return {{.LocalName}}OwnedList{Set: true, Items: []string{}}, diagnostics
+	}
+	diagnostics.Append(planWrapper.Items.ElementsAs(ctx, &planItems, false)...)
+	if diagnostics.HasError() {
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	if len(configItems) != len(planItems) {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", "Configured and planned item counts differ.")
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	{{- if .MaxItemsVar}}
+	if len(configItems) > {{.MaxItemsVar}} {
+		diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", fmt.Sprintf("{{.WireName}} may contain at most %d item blocks.", {{.MaxItemsVar}}))
+		return {{.LocalName}}OwnedList{}, diagnostics
+	}
+	{{- end}}
+	items := make([]string, 0, len(configItems))
+	for index := range configItems {
+		configuredItem := configItems[index]
+		plannedItem := planItems[index]
+		location := fmt.Sprintf("{{.WireName}} item %d", index+1)
+		if configuredItem.{{.ItemGoName}}.IsNull() {
+			diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", "The required "+location+" {{.ItemAttribute}} is null.")
+			continue
+		}
+		value := ""
+		if configuredItem.{{.ItemGoName}}.IsUnknown() {
+			if plannedItem.{{.ItemGoName}}.IsNull() || plannedItem.{{.ItemGoName}}.IsUnknown() {
+				diagnostics.AddError("Unknown {{$r.OperationName}} {{.WireName}}", "The configured "+location+" {{.ItemAttribute}} is still unknown during apply.")
+				continue
+			}
+			value = plannedItem.{{.ItemGoName}}.ValueString()
+		} else {
+			value = configuredItem.{{.ItemGoName}}.ValueString()
+		}
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}(value) {
+			diagnostics.AddError("Invalid {{$r.OperationName}} {{.WireName}}", location+" {{.ItemAttribute}} must be one of {{enumProse .Enum}}.")
+		}
+		{{- end}}
+		items = append(items, value)
+	}
+	return {{.LocalName}}OwnedList{Set: true, Items: items}, diagnostics
+}
+
+func {{$r.LowerCamel}}Decode{{.GoName}}(raw json.RawMessage) ([]string, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	{{- if .Required}}
+	if len(raw) == 0 {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result did not contain the required {{.WireName}} array.")
+		return nil, diagnostics
+	}
+	{{- else}}
+	if len(raw) == 0 {
+		return []string{}, diagnostics
+	}
+	{{- end}}
+	if {{$r.LowerCamel}}JSONNull(raw) {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained null {{.WireName}} instead of an array.")
+		return nil, diagnostics
+	}
+	var rawItems []json.RawMessage
+	if err := json.Unmarshal(raw, &rawItems); err != nil {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", "The successful API result contained a non-array {{.WireName}} value.")
+		return nil, diagnostics
+	}
+	{{- if .MaxItemsVar}}
+	if len(rawItems) > {{.MaxItemsVar}} {
+		diagnostics.AddError("Malformed {{$r.OperationName}} result", fmt.Sprintf("The successful API result contained more than %d {{.WireName}} items.", {{.MaxItemsVar}}))
+		return nil, diagnostics
+	}
+	{{- end}}
+	items := make([]string, 0, len(rawItems))
+	for position, rawItem := range rawItems {
+		location := fmt.Sprintf("{{.WireName}} item %d", position+1)
+		if {{$r.LowerCamel}}JSONNull(rawItem) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was null instead of a string.")
+			continue
+		}
+		var value string
+		if err := json.Unmarshal(rawItem, &value); err != nil {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not a string.")
+			continue
+		}
+		{{- if .EnumMap}}
+		if !{{.EnumValid}}(value) {
+			diagnostics.AddError("Malformed {{$r.OperationName}} result", location+" was not one of {{enumProse .Enum}}.")
+			continue
+		}
+		{{- end}}
+		items = append(items, value)
+	}
+	if diagnostics.HasError() {
+		return nil, diagnostics
+	}
+	return items, diagnostics
+}
+
+func {{$r.LowerCamel}}{{.GoName}}WrapperValue(items []string) (types.Object, diag.Diagnostics) {
+	var diagnostics diag.Diagnostics
+	elements := make([]attr.Value, 0, len(items))
+	for _, item := range items {
+		object, objectDiagnostics := types.ObjectValue({{.LocalName}}ItemAttributeTypes, map[string]attr.Value{"{{.ItemAttribute}}": types.StringValue(item)})
+		diagnostics.Append(objectDiagnostics...)
+		elements = append(elements, object)
+	}
+	list, listDiagnostics := types.ListValue(types.ObjectType{AttrTypes: {{.LocalName}}ItemAttributeTypes}, elements)
+	diagnostics.Append(listDiagnostics...)
+	wrapper, wrapperDiagnostics := types.ObjectValue({{.LocalName}}WrapperAttributeTypes, map[string]attr.Value{"item": list})
+	diagnostics.Append(wrapperDiagnostics...)
+	return wrapper, diagnostics
+}
+{{- end}}

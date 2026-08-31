@@ -1,39 +1,40 @@
 package fortiappseccloud
 
 import (
+	"context"
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"terraform-provider-fortiappseccloud/fortiappseccloud/waf"
+	"terraform-provider-fortiappseccloud/internal/providerconfig"
 )
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"hostname": &schema.Schema{
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The cloud-waf api domain",
-			},
-			"username": &schema.Schema{
+			"hostname": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "",
-				Default:     "",
+				Description: providerconfig.HostnameDescription,
 			},
-			"password": &schema.Schema{
+			"username": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "",
-				Default:     "",
+				Description: providerconfig.UsernameDescription,
 			},
-			"api_token": &schema.Schema{
+			"password": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "",
-				Description: "You must specify api_token field or username and password fields",
+				Sensitive:   true,
+				Description: providerconfig.PasswordDescription,
+			},
+			"api_token": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: providerconfig.APITokenDescription,
 			},
 		},
 
@@ -42,33 +43,38 @@ func Provider() *schema.Provider {
 			"fortiappseccloud_waf_openapi_validation": waf.ResourceOpenApiValidation(),
 		},
 
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-
-	// Init client config with the values from TF files
-	config := waf.Config{}
-	if host, ok := d.GetOk("hostname"); ok {
-		config.HostName = host.(string)
-	} else {
-		log.Printf("[ERROR] hostname must be specified ")
-		return nil, fmt.Errorf("hostname is not configed")
-	}
-	token, ok := d.GetOk("api_token")
-	if ok && token.(string) == "" || !ok {
-		username, _ := d.GetOk("username")
-		pass, _ := d.GetOk("password")
-		if username.(string) == "" || pass.(string) == "" {
-			return nil, fmt.Errorf("username or password is not configed")
-		}
-		config.UserName = username.(string)
-		config.PassWord = pass.(string)
-
-	} else {
-		config.Token = token.(string)
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	resolved, err := providerconfig.ResolveOS(providerconfig.Input{
+		Hostname: sdkValue(d, "hostname"),
+		APIToken: sdkValue(d, "api_token"),
+		Username: sdkValue(d, "username"),
+		Password: sdkValue(d, "password"),
+	})
+	if err != nil {
+		return nil, diag.FromErr(err)
 	}
 
-	return config.CreateClient()
+	config := waf.Config{
+		HostName: resolved.Hostname,
+		UserName: resolved.Username,
+		PassWord: resolved.Password,
+		Token:    resolved.APIToken,
+	}
+	configured, err := config.CreateClient()
+	if err != nil {
+		return nil, diag.FromErr(fmt.Errorf("configure legacy FortiAppSec Cloud client: %w", err))
+	}
+	return configured, nil
+}
+
+func sdkValue(d *schema.ResourceData, name string) providerconfig.Value {
+	value, ok := d.GetOk(name)
+	if !ok {
+		return providerconfig.Value{}
+	}
+	return providerconfig.Value{Set: true, Value: value.(string)}
 }

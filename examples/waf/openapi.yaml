@@ -1,0 +1,5 @@
+openapi: 3.0.0
+info:
+  title: FortiAppSec Cloud Terraform example
+  version: 1.0.0
+paths: {}

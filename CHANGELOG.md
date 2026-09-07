@@ -1,3 +1,9 @@
+## 2.0.1 (September 7, 2026)
+
+ENHANCEMENTS:
+
+* **ML bot detection challenge disable option:** `fortiappseccloud_waf_ml_bot_detection` now accepts `Disable` for the `challenge` field, allowing ML bot enforcement to be disabled without changing the rest of the module configuration. Omission still preserves the current value.
+
 ## 2.0.0 (August 31, 2026)
 
 NOTES:

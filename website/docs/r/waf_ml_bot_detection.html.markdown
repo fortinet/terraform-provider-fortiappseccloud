@@ -63,7 +63,7 @@ resource "fortiappseccloud_waf_ml_bot_detection" "example" {
   - `action` (Optional, Computed) — Sets Action. One of `alert`, `alert_deny`, `block_period`, `deny_no_log`. Omission preserves the current value.
   - `anomaly_count` (Optional, Computed) — Sets Anomaly count. Between 1 and 3. Omission preserves the current value.
   - `block_duration` (Optional, Computed) — Sets Block duration. Between 1 and 3600. Omission preserves the current value.
-  - `challenge` (Optional, Computed) — Sets Challenge. One of `Captcha-Enforcement`, `Real-Browser-Enforcement`. Omission preserves the current value.
+  - `challenge` (Optional, Computed) — Sets Challenge. One of `Captcha-Enforcement`, `Disable`, `Real-Browser-Enforcement`. Omission preserves the current value.
   - `identification_method` (Optional, Computed) — Sets Identification method. One of `Cookie`, `IP`, `IP-and-User-Agent`. Omission preserves the current value.
   - `model_type` (Optional, Computed) — Sets Model type. One of `Loose`, `Strict`. Omission preserves the current value.
   - `status` (Optional, Computed) — Enables or disables ML bot detection. Omission preserves the current value.

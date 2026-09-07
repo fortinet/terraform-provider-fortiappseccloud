@@ -230,7 +230,7 @@ func TestGeneratedManifestProvenanceAndVerticalSlice(t *testing.T) {
 	if err := json.Unmarshal(outputs[manifestOutputPath], &manifest); err != nil {
 		t.Fatalf("decode generated manifest: %v", err)
 	}
-	if manifest.Generated != generatedMarker || manifest.OpenAPI.Version != "26.3.a" || manifest.OpenAPI.SHA256 != "463015364e7d4d7cbd8f346a2e238928d1c7c741271656fec06bd8ed87e58e63" {
+	if manifest.Generated != generatedMarker || manifest.OpenAPI.Version != "26.3.a" || manifest.OpenAPI.SHA256 != "be3d23f9d9bdfcc966acdb0277ec59bf9dbc183a9cae83a86f217dfdf609d38e" {
 		t.Fatalf("manifest source/header = %#v / %q", manifest.OpenAPI, manifest.Generated)
 	}
 	if !manifest.Scope.FullWAFClassification || manifest.Scope.Classification != "complete_public_waf_operation_matrix" ||

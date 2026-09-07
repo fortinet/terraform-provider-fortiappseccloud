@@ -228,7 +228,7 @@ func TestPinnedCSRFManifestNormalization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildManifest() error = %v", err)
 	}
-	if manifest.OpenAPI.Version != "26.3.a" || manifest.OpenAPI.SHA256 != "463015364e7d4d7cbd8f346a2e238928d1c7c741271656fec06bd8ed87e58e63" {
+	if manifest.OpenAPI.Version != "26.3.a" || manifest.OpenAPI.SHA256 != "be3d23f9d9bdfcc966acdb0277ec59bf9dbc183a9cae83a86f217dfdf609d38e" {
 		t.Fatalf("OpenAPI source = %#v", manifest.OpenAPI)
 	}
 	if !manifest.Scope.FullWAFClassification || manifest.Scope.PublicOperationCount != 256 ||

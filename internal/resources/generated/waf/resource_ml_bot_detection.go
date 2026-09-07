@@ -70,6 +70,7 @@ var (
 	}
 	mlBotDetectionConfigChallengeValues = map[string]struct{}{
 		"Captcha-Enforcement":      {},
+		"Disable":                  {},
 		"Real-Browser-Enforcement": {},
 	}
 	mlBotDetectionConfigIDentificationMethodValues = map[string]struct{}{
@@ -360,7 +361,7 @@ func (mlBotDetectionCodec) Schema(context.Context) schema.Schema {
 						Optional:            true,
 						Computed:            true,
 						MarkdownDescription: "Omission preserves the current challenge value.",
-						Validators:          []validator.String{stringvalidator.OneOf("Captcha-Enforcement", "Real-Browser-Enforcement")},
+						Validators:          []validator.String{stringvalidator.OneOf("Captcha-Enforcement", "Disable", "Real-Browser-Enforcement")},
 						PlanModifiers:       stringStateModifier,
 					},
 					"identification_method": schema.StringAttribute{
@@ -483,7 +484,7 @@ func (mlBotDetectionCodec) validateConfigs(ctx context.Context, configs types.Ob
 		diagnostics.AddError("Invalid ML bot detection action", "action must be one of alert, alert_deny, block_period, deny_no_log.")
 	}
 	if !values.Challenge.IsNull() && !values.Challenge.IsUnknown() && !mlBotDetectionConfigChallengeValid(values.Challenge.ValueString()) {
-		diagnostics.AddError("Invalid ML bot detection challenge", "challenge must be one of Captcha-Enforcement, Real-Browser-Enforcement.")
+		diagnostics.AddError("Invalid ML bot detection challenge", "challenge must be one of Captcha-Enforcement, Disable, Real-Browser-Enforcement.")
 	}
 	if !values.IDentificationMethod.IsNull() && !values.IDentificationMethod.IsUnknown() && !mlBotDetectionConfigIDentificationMethodValid(values.IDentificationMethod.ValueString()) {
 		diagnostics.AddError("Invalid ML bot detection identification_method", "identification_method must be one of Cookie, IP, IP-and-User-Agent.")
@@ -558,7 +559,7 @@ func (mlBotDetectionCodec) buildConfigsPatch(ctx context.Context, configured, pl
 	}
 	patch.Challenge, diagnostics = mlBotDetectionConfiguredString(configValues.Challenge, planValues.Challenge, "challenge", diagnostics)
 	if patch.Challenge.Set && !mlBotDetectionConfigChallengeValid(patch.Challenge.Value) {
-		diagnostics.AddError("Invalid ML bot detection challenge", "challenge must be one of Captcha-Enforcement, Real-Browser-Enforcement.")
+		diagnostics.AddError("Invalid ML bot detection challenge", "challenge must be one of Captcha-Enforcement, Disable, Real-Browser-Enforcement.")
 	}
 	patch.IDentificationMethod, diagnostics = mlBotDetectionConfiguredString(configValues.IDentificationMethod, planValues.IDentificationMethod, "identification_method", diagnostics)
 	if patch.IDentificationMethod.Set && !mlBotDetectionConfigIDentificationMethodValid(patch.IDentificationMethod.Value) {

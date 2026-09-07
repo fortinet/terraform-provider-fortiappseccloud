@@ -68,7 +68,7 @@ var MLBotDetectionResource = ReviewedCandidate{
 			{Name: "action", Kind: "string", Required: true, HasDefault: true, Default: "client-id-block-period", Enum: []string{"alert", "alert_deny", "client-id-block-period", "deny_no_log"}},
 			{Name: "anomaly_count", Kind: "integer", Required: true, HasDefault: true, Default: 1, Minimum: ptrFloat(1), Maximum: ptrFloat(3)},
 			{Name: "block_duration", Kind: "integer", Required: false, HasDefault: true, Default: 600, Minimum: ptrFloat(1), Maximum: ptrFloat(3600)},
-			{Name: "challenge", Kind: "string", Required: true, HasDefault: true, Default: "Real-Browser-Enforcement", Enum: []string{"Captcha-Enforcement", "Real-Browser-Enforcement"}},
+			{Name: "challenge", Kind: "string", Required: true, HasDefault: true, Default: "Real-Browser-Enforcement", Enum: []string{"Captcha-Enforcement", "Disable", "Real-Browser-Enforcement"}},
 			{Name: "identification_method", Kind: "string", Required: true, HasDefault: true, Default: "IP-and-User-Agent", Enum: []string{"Cookie", "IP", "IP-and-User-Agent"}},
 			{Name: "model_type", Kind: "string", Required: true, HasDefault: true, Default: "Strict", Enum: []string{"Loose", "Strict"}},
 			{Name: "status", Kind: "boolean", Required: true, HasDefault: true, Default: false},

@@ -13,7 +13,7 @@ const (
 	// BaselineVersion is the FortiAppSec Cloud contract version reviewed by the v2 design.
 	BaselineVersion = "26.3.a"
 	// BaselineSHA256 pins the exact OpenAPI input used for contract extraction.
-	BaselineSHA256 = "463015364e7d4d7cbd8f346a2e238928d1c7c741271656fec06bd8ed87e58e63"
+	BaselineSHA256 = "be3d23f9d9bdfcc966acdb0277ec59bf9dbc183a9cae83a86f217dfdf609d38e"
 )
 
 var httpMethods = map[string]struct{}{

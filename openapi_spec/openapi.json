@@ -9706,7 +9706,8 @@
             "default": "Real-Browser-Enforcement",
             "enum": [
               "Real-Browser-Enforcement",
-              "Captcha-Enforcement"
+              "Captcha-Enforcement",
+              "Disable"
             ],
             "type": "string"
           },

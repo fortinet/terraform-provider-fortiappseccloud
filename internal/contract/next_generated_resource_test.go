@@ -69,8 +69,8 @@ func TestImplementedGeneratedResources(t *testing.T) {
 	t.Parallel()
 
 	resources := ImplementedGeneratedResources()
-	if len(resources) != 25 {
-		t.Fatalf("implemented generated resources = %d, want 25", len(resources))
+	if len(resources) != 26 {
+		t.Fatalf("implemented generated resources = %d, want 26", len(resources))
 	}
 	if resources[0].TerraformName != CSRFProtectionResource.TerraformName ||
 		resources[1].TerraformName != URLAccessCandidate.TerraformName ||

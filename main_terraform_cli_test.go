@@ -1001,6 +1001,7 @@ func requireTerraformCLISchema(t *testing.T, data []byte) {
 	}
 	sort.Strings(gotResources)
 	wantResources := []string{
+		"fortiappseccloud_waf_acceleration",
 		"fortiappseccloud_waf_account_takeover",
 		"fortiappseccloud_waf_anomaly_detection",
 		"fortiappseccloud_waf_api_gateway",
@@ -1033,6 +1034,7 @@ func requireTerraformCLISchema(t *testing.T, data []byte) {
 		"fortiappseccloud_waf_request_limits",
 		"fortiappseccloud_waf_rewriting_requests",
 		"fortiappseccloud_waf_template",
+		"fortiappseccloud_waf_template_acceleration",
 		"fortiappseccloud_waf_template_account_takeover",
 		"fortiappseccloud_waf_template_anomaly_detection",
 		"fortiappseccloud_waf_template_api_gateway",

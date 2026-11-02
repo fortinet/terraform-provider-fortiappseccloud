@@ -33,8 +33,8 @@ func TestImplementedGeneratedResourcesClonesNativeURLType(t *testing.T) {
 	t.Parallel()
 
 	resources := ImplementedGeneratedResources()
-	if len(resources) != 25 {
-		t.Fatalf("implemented generated resources = %d, want 25", len(resources))
+	if len(resources) != 26 {
+		t.Fatalf("implemented generated resources = %d, want 26", len(resources))
 	}
 	urlAccess := resources[1]
 	urlAccess.Schema.ItemFields[3].Enum[0] = "mutated"

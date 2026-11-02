@@ -193,7 +193,7 @@ The following example demonstrates how to use the Terraform FortiAppSecCloud pro
 
     Destroying `fortiappseccloud_waf_url_access` uses the same guarded disable-and-verify lifecycle.
 
-    Destroying `fortiappseccloud_waf_request_limits` also uses the guarded disable-and-verify lifecycle. These resources are among the 29 app modules that use guarded disable-on-destroy. All 31 typed template-module resources use the same preserving lifecycle against their template endpoints. Thirty disable with `configs.status=false`; template caching/compression also sets its API-coupled cache and compression statuses false.
+    Destroying `fortiappseccloud_waf_request_limits` also uses the guarded disable-and-verify lifecycle. These resources are among the 30 app modules that use guarded disable-on-destroy. All 32 typed template-module resources use the same preserving lifecycle against their template endpoints. Thirty-one disable with `configs.status=false`; template caching/compression also sets its API-coupled cache and compression statuses false.
 
 ## Account Takeover Configuration Rules
 

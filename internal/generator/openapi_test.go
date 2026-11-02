@@ -228,12 +228,12 @@ func TestPinnedCSRFManifestNormalization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildManifest() error = %v", err)
 	}
-	if manifest.OpenAPI.Version != "26.3.a" || manifest.OpenAPI.SHA256 != "be3d23f9d9bdfcc966acdb0277ec59bf9dbc183a9cae83a86f217dfdf609d38e" {
+	if manifest.OpenAPI.Version != "26.4" || manifest.OpenAPI.SHA256 != "c96ba675c156cb5846bd70c7dbc820cc3ac39c72fbbd4deda71f27d9152d6741" {
 		t.Fatalf("OpenAPI source = %#v", manifest.OpenAPI)
 	}
-	if !manifest.Scope.FullWAFClassification || manifest.Scope.PublicOperationCount != 256 ||
-		manifest.Scope.NonPublicOperationCount != 6 || manifest.Scope.SelectedResourceCount != 25 ||
-		len(manifest.Scope.Operations) != 256 || len(manifest.Resources) != 25 {
+	if !manifest.Scope.FullWAFClassification || manifest.Scope.PublicOperationCount != 267 ||
+		manifest.Scope.NonPublicOperationCount != 6 || manifest.Scope.SelectedResourceCount != 26 ||
+		len(manifest.Scope.Operations) != 267 || len(manifest.Resources) != 26 {
 		t.Fatalf("scope/resources = %#v / %#v", manifest.Scope, manifest.Resources)
 	}
 	if manifest.Scope.NextGeneratedResource != nil {
@@ -311,8 +311,8 @@ func TestPinnedURLAccessManifestNormalization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildManifest() error = %v", err)
 	}
-	if len(manifest.Resources) != 25 {
-		t.Fatalf("resources = %d, want 25", len(manifest.Resources))
+	if len(manifest.Resources) != 26 {
+		t.Fatalf("resources = %d, want 26", len(manifest.Resources))
 	}
 	resource := findManifestResource(t, manifest, contract.URLAccessCandidate.TerraformName)
 	if resource.TerraformName != contract.URLAccessCandidate.TerraformName ||

@@ -79,8 +79,8 @@ func TestBuildRenderModel(t *testing.T) {
 	if len(requestLimits.CrossFieldRules) != 1 {
 		t.Fatalf("request_limits cross-field rules = %d, want 1", len(requestLimits.CrossFieldRules))
 	}
-	if len(model.Resources) != 25 {
-		t.Fatalf("Resources = %d, want 25", len(model.Resources))
+	if len(model.Resources) != 26 {
+		t.Fatalf("Resources = %d, want 26", len(model.Resources))
 	}
 	csrf := findResourceRender(t, model, "fortiappseccloud_waf_csrf_protection")
 	if csrf.DestroyModeGo != "Disable" || csrf.DestroyField != "status" || !csrf.DestroyVerified || !csrf.DestroyDisables || csrf.DestroyCandidate {

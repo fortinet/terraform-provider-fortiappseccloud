@@ -13,6 +13,7 @@ import (
 	resourceschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	"terraform-provider-fortiappseccloud/internal/client"
@@ -48,6 +49,9 @@ func TestCreateUsesPublicPlacementAndBootstrapOrigin(t *testing.T) {
 	if state.EPID.ValueString() != "100" || state.CNAMEs.IsNull() || state.InitialOrigin.IsNull() || state.CertificateMode.ValueString() != "custom" || state.AttachedTemplateID.ValueString() != "template-1" || state.AttachedTemplateName.ValueString() != "legacy-template" {
 		t.Fatalf("state = %#v", state)
 	}
+	if !state.HTTP2Status.ValueBool() || state.IPv6Option.ValueBool() || state.CertChallengeMode.ValueString() != "dns" || state.BlockURL.ValueString() != "PredefinedMsg" {
+		t.Fatalf("endpoint state fields = %#v", state)
+	}
 }
 
 func TestCreateRunsOnlyPublicPrechecksWhenRequested(t *testing.T) {
@@ -71,6 +75,43 @@ func TestCreateRunsOnlyPublicPrechecksWhenRequested(t *testing.T) {
 	}
 	if service.created.CertType != nil {
 		t.Fatalf("omitted certificate_mode sent cert_type = %d", *service.created.CertType)
+	}
+}
+
+func TestCreateRetainsIdentityWhenEndpointSettingsFail(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	for _, stage := range []string{"read", "write"} {
+		t.Run(stage, func(t *testing.T) {
+			service := &fakeAppService{
+				application: client.Application{EPID: "100", AppName: "demo", DomainName: "demo.example.com", Platform: "AWS", PlatformRegion: "us-east-1"},
+				endpoint:    testEndpoint(),
+			}
+			if stage == "read" {
+				service.getEndpointError = errors.New("endpoint unavailable")
+			} else {
+				service.putEndpointError = errors.New("endpoint settings rejected")
+			}
+			implementation := &appResource{service: service, locks: locking.NewRegistry(), pollAttempts: 1}
+			schema := currentSchema()
+			plan := testAppModel(t, ctx)
+			plan.HTTP2Status = types.BoolValue(true)
+			response := resource.CreateResponse{State: nullAppState(ctx, schema)}
+			implementation.Create(ctx, resource.CreateRequest{Plan: appPlan(t, ctx, schema, &plan)}, &response)
+			if !response.Diagnostics.HasError() {
+				t.Fatal("Create() did not report the endpoint failure")
+			}
+			if response.State.Raw.IsNull() {
+				t.Fatal("Create() lost the identity of the application after endpoint failure")
+			}
+			var state resourceModel
+			if diagnostics := response.State.Get(ctx, &state); diagnostics.HasError() {
+				t.Fatal(diagnostics)
+			}
+			if state.EPID.ValueString() != "100" {
+				t.Fatalf("created application ID = %q, want 100", state.EPID.ValueString())
+			}
+		})
 	}
 }
 
@@ -158,6 +199,11 @@ func TestUpdateUsesNonOverlappingPublicEndpoints(t *testing.T) {
 	plan.ExtraDomains, _ = types.ListValueFrom(ctx, types.StringType, []string{"new.example.com"})
 	plan.BlockMode = types.BoolValue(true)
 	plan.CertificateMode = types.StringValue("custom")
+	plan.HTTP2Status = types.BoolValue(true)
+	plan.IPv6Option = types.BoolValue(false)
+	plan.CertChallengeMode = types.StringValue("dns")
+	plan.BlockURL = types.StringValue("PredefinedMsg")
+	plan.SslOptions = configuredSslOptions(t, ctx, "mozilla_old")
 	request := resource.UpdateRequest{State: appState(t, ctx, schema, &prior), Plan: appPlan(t, ctx, schema, &plan)}
 	response := resource.UpdateResponse{State: appState(t, ctx, schema, &prior)}
 	implementation.Update(ctx, request, &response)
@@ -168,8 +214,126 @@ func TestUpdateUsesNonOverlappingPublicEndpoints(t *testing.T) {
 	if !reflect.DeepEqual(service.calls, wantCalls) {
 		t.Fatalf("calls = %#v, want %#v", service.calls, wantCalls)
 	}
-	if service.updatedEndpoint["custom_port"] != nil || service.updatedEndpoint["custom_http_port"] != int64(80) || service.updatedEndpoint["cert_type"] != 1 || service.updatedEndpoint["cert_auto_status"] != float64(7) || service.updatedEndpoint["cert_challenge_mode"] != float64(2) {
+	if service.updatedEndpoint["custom_port"] != nil || service.updatedEndpoint["custom_http_port"] != int64(80) || service.updatedEndpoint["cert_type"] != 1 || service.updatedEndpoint["cert_auto_status"] != float64(7) || service.updatedEndpoint["cert_challenge_mode"] != 2 {
 		t.Fatalf("endpoint request = %#v", service.updatedEndpoint)
+	}
+	if service.updatedEndpoint["http2_status"] != 1 || service.updatedEndpoint["ipv6_option"] != 0 || service.updatedEndpoint["block_url"] != "PredefinedMsg" || service.updatedEndpoint["preserve"] != true {
+		t.Fatalf("endpoint request = %#v", service.updatedEndpoint)
+	}
+	sent := service.updatedEndpoint["ssl_options"].(map[string]any)
+	if sent["encryption_level"] != "mozilla_old" || sent["hsts_max_age"] != int64(31536000) || sent["http_2_https"] != 1 {
+		t.Fatalf("ssl_options request = %#v", sent)
+	}
+	if _, ok := sent["available_tls13_custom_cipher"]; ok {
+		t.Fatalf("ssl_options request carries response-only fields: %#v", sent)
+	}
+	var state resourceModel
+	if diagnostics := response.State.Get(ctx, &state); diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	if !state.HTTP2Status.ValueBool() || state.IPv6Option.ValueBool() || state.CertChallengeMode.ValueString() != "dns" || state.BlockURL.ValueString() != "PredefinedMsg" {
+		t.Fatalf("state = %#v", state)
+	}
+	if state.SslOptions.IsNull() {
+		t.Fatal("state ssl_options is null after update")
+	}
+	var stateOptions sslOptionsModel
+	if diagnostics := state.SslOptions.As(ctx, &stateOptions, basetypes.ObjectAsOptions{}); diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	// The plain mock stores the PUT document verbatim, so the refreshed block
+	// carries the written level and members; the API recomputes tls_1_x from
+	// the level, which is why those attributes are computed-only.
+	if stateOptions.EncryptionLevel.ValueString() != "mozilla_old" || !stateOptions.HTTP2HTTPS.ValueBool() || stateOptions.HSTSMaxAge.ValueInt64() != 31536000 {
+		t.Fatalf("state ssl_options = %#v", stateOptions)
+	}
+}
+
+func TestUpdateEndpointFieldsNotPlannedPreserveRemoteValues(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	service := &fakeAppService{application: client.Application{EPID: "100", AppName: "demo", DomainName: "demo.example.com", Platform: "AWS", PlatformRegion: "us-east-1"}, endpoint: testEndpoint()}
+	implementation := &appResource{service: service, locks: locking.NewRegistry(), pollAttempts: 1}
+	schema := currentSchema()
+	prior := testAppModel(t, ctx)
+	prior.EPID = types.StringValue("100")
+	prior.HTTP2Status = types.BoolValue(true)
+	prior.IPv6Option = types.BoolValue(false)
+	prior.CertChallengeMode = types.StringValue("dns")
+	prior.BlockURL = types.StringValue("PredefinedMsg")
+	plan := prior
+	// The practitioner changed only extra_domains; the endpoint fields carry
+	// no configuration of their own and must preserve the GET values.
+	plan.HTTP2Status = types.BoolUnknown()
+	plan.IPv6Option = types.BoolUnknown()
+	plan.CertChallengeMode = types.StringUnknown()
+	plan.BlockURL = types.StringUnknown()
+	plan.ExtraDomains, _ = types.ListValueFrom(ctx, types.StringType, []string{"new.example.com"})
+	request := resource.UpdateRequest{State: appState(t, ctx, schema, &prior), Plan: appPlan(t, ctx, schema, &plan)}
+	response := resource.UpdateResponse{State: appState(t, ctx, schema, &prior)}
+	implementation.Update(ctx, request, &response)
+	if response.Diagnostics.HasError() {
+		t.Fatalf("Update() diagnostics = %v", response.Diagnostics)
+	}
+	if service.updatedEndpoint["http2_status"] != float64(1) || service.updatedEndpoint["ipv6_option"] != float64(0) || service.updatedEndpoint["cert_challenge_mode"] != float64(2) || service.updatedEndpoint["block_url"] != "PredefinedMsg" {
+		t.Fatalf("endpoint request = %#v", service.updatedEndpoint)
+	}
+}
+
+func TestUpdateEndpointFieldsTriggerPutOnChange(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	service := &fakeAppService{application: client.Application{EPID: "100", AppName: "demo", DomainName: "demo.example.com", Platform: "AWS", PlatformRegion: "us-east-1"}, endpoint: testEndpoint()}
+	implementation := &appResource{service: service, locks: locking.NewRegistry(), pollAttempts: 1}
+	schema := currentSchema()
+	prior := testAppModel(t, ctx)
+	prior.EPID = types.StringValue("100")
+	// No other owned endpoint field changes; only http2_status flips.
+	prior.HTTP2Status = types.BoolValue(true)
+	prior.IPv6Option = types.BoolNull()
+	prior.CertChallengeMode = types.StringNull()
+	prior.BlockURL = types.StringNull()
+	plan := prior
+	plan.HTTP2Status = types.BoolValue(false)
+	request := resource.UpdateRequest{State: appState(t, ctx, schema, &prior), Plan: appPlan(t, ctx, schema, &plan)}
+	response := resource.UpdateResponse{State: appState(t, ctx, schema, &prior)}
+	implementation.Update(ctx, request, &response)
+	if response.Diagnostics.HasError() {
+		t.Fatalf("Update() diagnostics = %v", response.Diagnostics)
+	}
+	for _, call := range service.calls {
+		if call == "update-endpoint:100" {
+			if service.updatedEndpoint["http2_status"] != 0 {
+				t.Fatalf("endpoint request = %#v", service.updatedEndpoint)
+			}
+			return
+		}
+	}
+	t.Fatalf("endpoint PUT was not triggered; calls = %#v", service.calls)
+}
+
+func TestUpdateBlockURLPreservesEmptyString(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	service := &fakeAppService{application: client.Application{EPID: "100", AppName: "demo", DomainName: "demo.example.com", Platform: "AWS", PlatformRegion: "us-east-1"}, endpoint: testEndpoint()}
+	implementation := &appResource{service: service, locks: locking.NewRegistry(), pollAttempts: 1}
+	schema := currentSchema()
+	prior := testAppModel(t, ctx)
+	prior.EPID = types.StringValue("100")
+	prior.BlockURL = types.StringValue("PredefinedMsg")
+	plan := prior
+	plan.BlockURL = types.StringValue("")
+	response := resource.UpdateResponse{State: appState(t, ctx, schema, &prior)}
+	implementation.Update(ctx, resource.UpdateRequest{State: appState(t, ctx, schema, &prior), Plan: appPlan(t, ctx, schema, &plan)}, &response)
+	if response.Diagnostics.HasError() {
+		t.Fatal(response.Diagnostics)
+	}
+	var state resourceModel
+	if diagnostics := response.State.Get(ctx, &state); diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	if !state.BlockURL.Equal(plan.BlockURL) {
+		t.Fatalf("block_url = %s, want the configured empty string", state.BlockURL)
 	}
 }
 
@@ -307,11 +471,207 @@ func testAppModel(t *testing.T, ctx context.Context) resourceModel {
 	if diagnostics.HasError() {
 		t.Fatal(diagnostics)
 	}
-	return resourceModel{EPID: types.StringNull(), LegacyAppName: types.StringNull(), AppName: types.StringValue("demo"), DomainName: types.StringValue("demo.example.com"), ExtraDomains: extra, Services: services, HTTPPort: types.Int64Value(80), HTTPSPort: types.Int64Value(443), Platform: types.StringValue("AWS"), Region: types.StringValue("us-east-1"), CDN: types.BoolValue(false), GlobalCDN: types.BoolValue(false), Continent: types.StringNull(), BlockMode: types.BoolValue(false), CertificateMode: types.StringValue("automatic"), InitialOrigin: origin, Precheck: types.BoolValue(false), CNAMEs: types.ListNull(types.StringType), PlacementRegion: types.StringNull(), AttachedTemplateID: types.StringNull(), AttachedTemplateName: types.StringNull()}
+	return resourceModel{EPID: types.StringNull(), LegacyAppName: types.StringNull(), AppName: types.StringValue("demo"), DomainName: types.StringValue("demo.example.com"), ExtraDomains: extra, Services: services, HTTPPort: types.Int64Value(80), HTTPSPort: types.Int64Value(443), Platform: types.StringValue("AWS"), Region: types.StringValue("us-east-1"), CDN: types.BoolValue(false), GlobalCDN: types.BoolValue(false), Continent: types.StringNull(), BlockMode: types.BoolValue(false), CertificateMode: types.StringValue("automatic"), InitialOrigin: origin, Precheck: types.BoolValue(false), CNAMEs: types.ListNull(types.StringType), PlacementRegion: types.StringNull(), AttachedTemplateID: types.StringNull(), AttachedTemplateName: types.StringNull(), SslOptions: types.ObjectNull(sslOptionsTypes)}
 }
 
 func testEndpoint() map[string]any {
-	return map[string]any{"extra_domains": []any{"api.example.com"}, "http_status": float64(1), "https_status": float64(1), "custom_port": map[string]any{"http": float64(80), "https": float64(443)}, "cert_type": float64(0), "cert_auto_status": float64(7), "cert_challenge_mode": float64(2), "preserve": true}
+	return map[string]any{"extra_domains": []any{"api.example.com"}, "http_status": float64(1), "https_status": float64(1), "custom_port": map[string]any{"http": float64(80), "https": float64(443)}, "cert_type": float64(0), "cert_auto_status": float64(7), "cert_challenge_mode": float64(2), "http2_status": float64(1), "ipv6_option": float64(0), "block_url": "PredefinedMsg", "ssl_options": map[string]any{"encryption_level": "mozilla_intermediate", "tls_1_1": float64(0), "tls_1_2": float64(1), "tls_1_3": float64(1), "http_2_https": float64(0), "hsts_header": float64(0), "hsts_max_age": float64(15552000), "hsts_preload": float64(0), "hsts_sub_domains": float64(0), "internal_cookie_secure": float64(0), "internal_cookie_httponly": float64(0), "selected_ssl_custom_cipher": []any{"ECDHE-RSA-AES128-GCM-SHA256"}, "selected_ssl_custom_cipher_http2": []any{"ECDHE-RSA-AES256-GCM-SHA384"}, "selected_tls13_custom_cipher": []any{"TLS_AES_256_GCM_SHA384"}, "available_ssl_custom_cipher": []any{"ECDHE-RSA-AES128-GCM-SHA256", "DHE-RSA-AES128-GCM-SHA256"}, "available_ssl_custom_cipher_http2": []any{"ECDHE-RSA-AES256-GCM-SHA384"}, "available_tls13_custom_cipher": []any{"TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"}}, "preserve": true}
+}
+
+// configuredSslOptions builds a practitioner-configured ssl_options block.
+// Only the explicitly configured members are set; the rest stay null to prove
+// the merge-PUT carries the fresh GET values for unset members.
+func configuredSslOptions(t *testing.T, ctx context.Context, level string) types.Object {
+	t.Helper()
+	object, diagnostics := types.ObjectValue(sslOptionsTypes, map[string]attr.Value{
+		"encryption_level":                  types.StringValue(level),
+		"tls_1_1":                           types.BoolNull(),
+		"tls_1_2":                           types.BoolNull(),
+		"tls_1_3":                           types.BoolNull(),
+		"http_2_https":                      types.BoolValue(true),
+		"hsts_header":                       types.BoolNull(),
+		"hsts_max_age":                      types.Int64Value(31536000),
+		"hsts_preload":                      types.BoolNull(),
+		"hsts_sub_domains":                  types.BoolNull(),
+		"internal_cookie_secure":            types.BoolNull(),
+		"internal_cookie_httponly":          types.BoolNull(),
+		"selected_ssl_custom_cipher":        types.ListNull(types.StringType),
+		"selected_ssl_custom_cipher_http2":  types.ListNull(types.StringType),
+		"selected_tls13_custom_cipher":      types.ListNull(types.StringType),
+		"available_ssl_custom_cipher":       types.ListNull(types.StringType),
+		"available_ssl_custom_cipher_http2": types.ListNull(types.StringType),
+		"available_tls13_custom_cipher":     types.ListNull(types.StringType),
+	})
+	if diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	return object
+}
+
+func TestValidateSslOptionsRequiresEncryptionLevelOnlyWhenConfigured(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	for _, testCase := range []struct {
+		name      string
+		omitted   bool
+		level     types.String
+		wantError bool
+	}{
+		{name: "omitted block", omitted: true},
+		{name: "configured level", level: types.StringValue("mozilla_intermediate")},
+		{name: "unknown level", level: types.StringUnknown()},
+		{name: "missing level", level: types.StringNull(), wantError: true},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			config := testAppModel(t, ctx)
+			if !testCase.omitted {
+				attributes := configuredSslOptions(t, ctx, "mozilla_intermediate").Attributes()
+				attributes["encryption_level"] = testCase.level
+				attributes["hsts_header"] = types.BoolValue(true)
+				var diagnostics diag.Diagnostics
+				config.SslOptions, diagnostics = types.ObjectValue(sslOptionsTypes, attributes)
+				if diagnostics.HasError() {
+					t.Fatal(diagnostics)
+				}
+			}
+			var diagnostics diag.Diagnostics
+			validateSslOptionsConfig(ctx, config, &diagnostics)
+			if diagnostics.HasError() != testCase.wantError {
+				t.Fatalf("validation diagnostics = %v, want error %t", diagnostics, testCase.wantError)
+			}
+			if testCase.wantError && diagnostics[0].Summary() != "Missing SSL encryption level" {
+				t.Fatalf("unexpected validation diagnostic: %v", diagnostics)
+			}
+		})
+	}
+}
+
+func TestValidateSslOptionsRejectsHstsDependentsWithoutHeader(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	hstsDisabled, diagnostics := types.ObjectValue(sslOptionsTypes, map[string]attr.Value{
+		"encryption_level":                  types.StringValue("mozilla_intermediate"),
+		"tls_1_1":                           types.BoolNull(),
+		"tls_1_2":                           types.BoolNull(),
+		"tls_1_3":                           types.BoolNull(),
+		"http_2_https":                      types.BoolNull(),
+		"hsts_header":                       types.BoolValue(false),
+		"hsts_max_age":                      types.Int64Value(31536000),
+		"hsts_preload":                      types.BoolNull(),
+		"hsts_sub_domains":                  types.BoolNull(),
+		"internal_cookie_secure":            types.BoolNull(),
+		"internal_cookie_httponly":          types.BoolNull(),
+		"selected_ssl_custom_cipher":        types.ListNull(types.StringType),
+		"selected_ssl_custom_cipher_http2":  types.ListNull(types.StringType),
+		"selected_tls13_custom_cipher":      types.ListNull(types.StringType),
+		"available_ssl_custom_cipher":       types.ListNull(types.StringType),
+		"available_ssl_custom_cipher_http2": types.ListNull(types.StringType),
+		"available_tls13_custom_cipher":     types.ListNull(types.StringType),
+	})
+	if diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	config := testAppModel(t, ctx)
+	config.SslOptions = hstsDisabled
+	var validator diag.Diagnostics
+	validateSslOptionsConfig(ctx, config, &validator)
+	if !validator.HasError() {
+		t.Fatal("hsts_max_age with hsts_header disabled was accepted")
+	}
+	if len(validator.Errors()) != 1 {
+		t.Fatalf("diagnostics = %v", validator)
+	}
+
+	// The same block with hsts_header enabled is valid.
+	hstsEnabledObject := map[string]attr.Value{}
+	for key, value := range hstsDisabled.Attributes() {
+		hstsEnabledObject[key] = value
+	}
+	hstsEnabledObject["hsts_header"] = types.BoolValue(true)
+	hstsEnabled, diagnostics := types.ObjectValue(sslOptionsTypes, hstsEnabledObject)
+	if diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	config.SslOptions = hstsEnabled
+	var clean diag.Diagnostics
+	validateSslOptionsConfig(ctx, config, &clean)
+	if clean.HasError() {
+		t.Fatalf("hsts_max_age with hsts_header enabled was rejected: %v", clean)
+	}
+
+	// A value supplied by another resource is not known during validation.
+	// Defer the dependency check until that value is resolved.
+	hstsEnabledObject["hsts_header"] = types.BoolUnknown()
+	config.SslOptions, diagnostics = types.ObjectValue(sslOptionsTypes, hstsEnabledObject)
+	if diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	var deferred diag.Diagnostics
+	validateSslOptionsConfig(ctx, config, &deferred)
+	if deferred.HasError() {
+		t.Fatalf("unknown hsts_header was rejected before it could resolve: %v", deferred)
+	}
+}
+
+// TestUpdateSslOptionsCarriesRemoteCiphers proves computed-only cipher lists
+// are carried from the fresh GET document into the PUT so an encryption-level
+// update never overwrites the remote ciphers with the API default.
+func TestUpdateSslOptionsCarriesRemoteCiphers(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	service := &fakeAppService{application: client.Application{EPID: "100", AppName: "demo", DomainName: "demo.example.com", Platform: "AWS", PlatformRegion: "us-east-1"}, endpoint: testEndpoint()}
+	implementation := &appResource{service: service, locks: locking.NewRegistry(), pollAttempts: 1}
+	schema := currentSchema()
+	prior := testAppModel(t, ctx)
+	prior.EPID = types.StringValue("100")
+	plan := prior
+	plan.SslOptions = configuredSslOptions(t, ctx, "mozilla_old")
+	request := resource.UpdateRequest{State: appState(t, ctx, schema, &prior), Plan: appPlan(t, ctx, schema, &plan)}
+	response := resource.UpdateResponse{State: appState(t, ctx, schema, &prior)}
+	implementation.Update(ctx, request, &response)
+	if response.Diagnostics.HasError() {
+		t.Fatalf("Update() diagnostics = %v", response.Diagnostics)
+	}
+	sent := service.updatedEndpoint["ssl_options"].(map[string]any)
+	if sent["selected_ssl_custom_cipher"] == nil || sent["selected_tls13_custom_cipher"] == nil {
+		t.Fatalf("ssl_options request dropped remote cipher lists: %#v", sent)
+	}
+}
+
+func TestUpdateSslOptionsNotPlannedPreservesRemoteDocument(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	service := &fakeAppService{application: client.Application{EPID: "100", AppName: "demo", DomainName: "demo.example.com", Platform: "AWS", PlatformRegion: "us-east-1"}, endpoint: testEndpoint()}
+	implementation := &appResource{service: service, locks: locking.NewRegistry(), pollAttempts: 1}
+	schema := currentSchema()
+	prior := testAppModel(t, ctx)
+	prior.EPID = types.StringValue("100")
+	// The practitioner changed only extra_domains; ssl_options is not
+	// configured and must stay absent from the request document replacement.
+	plan := prior
+	plan.SslOptions = types.ObjectNull(sslOptionsTypes)
+	plan.ExtraDomains, _ = types.ListValueFrom(ctx, types.StringType, []string{"new.example.com"})
+	request := resource.UpdateRequest{State: appState(t, ctx, schema, &prior), Plan: appPlan(t, ctx, schema, &plan)}
+	response := resource.UpdateResponse{State: appState(t, ctx, schema, &prior)}
+	implementation.Update(ctx, request, &response)
+	if response.Diagnostics.HasError() {
+		t.Fatalf("Update() diagnostics = %v", response.Diagnostics)
+	}
+	sent, ok := service.updatedEndpoint["ssl_options"].(map[string]any)
+	if !ok || sent["encryption_level"] != "mozilla_intermediate" || sent["hsts_max_age"] != float64(15552000) {
+		t.Fatalf("ssl_options request = %#v", service.updatedEndpoint["ssl_options"])
+	}
+	if sent["available_ssl_custom_cipher"] == nil {
+		t.Fatalf("ssl_options request dropped remote members: %#v", sent)
+	}
+	var state resourceModel
+	if diagnostics := response.State.Get(ctx, &state); diagnostics.HasError() {
+		t.Fatal(diagnostics)
+	}
+	if !state.SslOptions.IsNull() {
+		t.Fatal("omitted ssl_options block must remain null in state")
+	}
 }
 
 func appState(t *testing.T, ctx context.Context, resourceSchema resourceschema.Schema, model any) tfsdk.State {
@@ -336,13 +696,15 @@ func nullAppState(ctx context.Context, resourceSchema resourceschema.Schema) tfs
 }
 
 type fakeAppService struct {
-	calls           []string
-	created         client.ApplicationCreateRequest
-	application     client.Application
-	endpoint        map[string]any
-	updatedEndpoint map[string]any
-	dnsAddresses    []string
-	deleted         bool
+	calls            []string
+	created          client.ApplicationCreateRequest
+	application      client.Application
+	endpoint         map[string]any
+	updatedEndpoint  map[string]any
+	getEndpointError error
+	putEndpointError error
+	dnsAddresses     []string
+	deleted          bool
 }
 
 func (s *fakeAppService) CreateApplication(_ context.Context, request client.ApplicationCreateRequest) (client.ApplicationCreateResponse, error) {
@@ -360,6 +722,9 @@ func (s *fakeAppService) UpdateApplicationBlockMode(_ context.Context, id string
 }
 func (s *fakeAppService) GetApplicationEndpoint(_ context.Context, id string) (map[string]any, error) {
 	s.calls = append(s.calls, "endpoint:"+id)
+	if s.getEndpointError != nil {
+		return nil, s.getEndpointError
+	}
 	result := map[string]any{}
 	for key, value := range s.endpoint {
 		result[key] = value
@@ -368,6 +733,9 @@ func (s *fakeAppService) GetApplicationEndpoint(_ context.Context, id string) (m
 }
 func (s *fakeAppService) PutApplicationEndpoint(_ context.Context, id string, document map[string]any) error {
 	s.calls = append(s.calls, "update-endpoint:"+id)
+	if s.putEndpointError != nil {
+		return s.putEndpointError
+	}
 	s.updatedEndpoint = document
 	s.endpoint = document
 	return nil

@@ -36,7 +36,7 @@ The provider-level `cacert_file` argument is different: it supplies a local CA b
 
 ## Strongly Recommended: Manage Origin Servers Explicitly
 
-We strongly recommend declaring a [`fortiappseccloud_waf_origin_servers`](../r/waf_origin_servers.html) resource for every Terraform-managed application.
+We strongly recommend declaring a [`fortiappseccloud_waf_origin_servers`](../r/waf_origin_servers) resource for every Terraform-managed application.
 
 The `initial_origin` block in `fortiappseccloud_waf_app` exists only to bootstrap application creation. It is replacement-only and is not the standard resource for ongoing origin configuration. Use `fortiappseccloud_waf_origin_servers` to manage the application's complete mutable origin server pool, including multiple servers, health checks, persistence, weights, status, and TLS settings.
 
@@ -79,11 +79,11 @@ As a minimum Terraform-managed protection baseline, configure these five modules
 
 | Protection | Terraform resource | Purpose |
 | --- | --- | --- |
-| Known Attacks | [`fortiappseccloud_waf_known_attacks`](../r/waf_known_attacks.html) | Detects common attacks and known exploit signatures. |
-| Request Limits | [`fortiappseccloud_waf_request_limits`](../r/waf_request_limits.html) | Enforces request-size, count, method, and malformed-request limits. |
-| DDoS Prevention | [`fortiappseccloud_waf_ddos_prevention`](../r/waf_ddos_prevention.html) | Configures connection, request, session, and flood controls. |
-| Known Bots | [`fortiappseccloud_waf_known_bots`](../r/waf_known_bots.html) | Controls known good and bad bot categories and exceptions. |
-| IP Protection | [`fortiappseccloud_waf_ip_protection`](../r/waf_ip_protection.html) | Applies IP reputation, geographic policy, and explicit IP rules. |
+| Known Attacks | [`fortiappseccloud_waf_known_attacks`](../r/waf_known_attacks) | Detects common attacks and known exploit signatures. |
+| Request Limits | [`fortiappseccloud_waf_request_limits`](../r/waf_request_limits) | Enforces request-size, count, method, and malformed-request limits. |
+| DDoS Prevention | [`fortiappseccloud_waf_ddos_prevention`](../r/waf_ddos_prevention) | Configures connection, request, session, and flood controls. |
+| Known Bots | [`fortiappseccloud_waf_known_bots`](../r/waf_known_bots) | Controls known good and bad bot categories and exceptions. |
+| IP Protection | [`fortiappseccloud_waf_ip_protection`](../r/waf_ip_protection) | Applies IP reputation, geographic policy, and explicit IP rules. |
 
 Choose one ownership model for each module:
 
@@ -171,9 +171,9 @@ Do not remove an imported module's resource block and apply the resulting plan u
 
 The five recommended app-module resources above use disable-on-destroy behavior. When Terraform destroys one of those resources, the provider preserves the remaining remote response, sets `template = false` and `configs.status = false`, verifies the update, and then removes the resource from state. Removing its HCL block after import therefore plans a Terraform destroy that disables that live module; it does not merely stop tracking it.
 
-All 31 typed template-module resources also use disable-on-destroy. Removing an imported `fortiappseccloud_waf_template_<module>` resource preserves the remaining template-module response, applies its reviewed status fields, verifies the update, and disables that module in the template. Thirty resources set `template = false` and `configs.status = false`; caching/compression additionally sets `configs.cache.status = false` and `configs.compress.status = false`. Removing the base `fortiappseccloud_waf_template` resource is different: it deletes a user-defined template after its dependent resources are destroyed.
+All 32 typed template-module resources also use disable-on-destroy. Removing an imported `fortiappseccloud_waf_template_<module>` resource preserves the remaining template-module response, applies its reviewed status fields, verifies the update, and disables that module in the template. Thirty-one resources set `template = false` and `configs.status = false`; caching/compression additionally sets `configs.cache.status = false` and `configs.compress.status = false`. Removing the base `fortiappseccloud_waf_template` resource is different: it deletes a user-defined template after its dependent resources are destroyed.
 
-Always read the resource's **Destroy Behavior** section before removing any WAF resource. Some app-scoped resources forget state while preserving remote configuration, but none of the 31 typed template-module resources is forget-only. Lifecycle behavior must not be assumed from another resource.
+Always read the resource's **Destroy Behavior** section before removing any WAF resource. Some app-scoped resources forget state while preserving remote configuration, but none of the 32 typed template-module resources is forget-only. Lifecycle behavior must not be assumed from another resource.
 
 If the goal is to stop Terraform management while keeping a module enabled, do not apply the destroy plan. Back up state, remove the resource from Terraform state without destroying it, and remove its HCL block as part of the same reviewed change:
 

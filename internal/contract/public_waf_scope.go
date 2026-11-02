@@ -103,6 +103,7 @@ var generatedAppModules = stringSet(
 	"rewriting_requests",
 	"api_gateway",
 	"caching_compression",
+	"acceleration",
 )
 
 // implementedTemplateModules is the reviewed intersection of public template
@@ -110,6 +111,7 @@ var generatedAppModules = stringSet(
 // deferred pending a typed template-specific review, and the bulk modules
 // endpoint remains excluded from resource ownership.
 var implementedTemplateModules = stringSet(
+	"acceleration",
 	"account_takeover",
 	"anomaly_detection",
 	"api_gateway",
@@ -149,6 +151,7 @@ var implementedTemplateModules = stringSet(
 // status=true writes, in the accepted complete dev1 matrix. Keep this separate
 // from app-module evidence.
 var liveVerifiedTemplateModules = stringSet(
+	"acceleration",
 	"account_takeover",
 	"anomaly_detection",
 	"api_gateway",
@@ -184,7 +187,8 @@ var liveVerifiedTemplateModules = stringSet(
 
 // liveVerifiedGeneratedAppModules contains the complete generated set after
 // the target-bound July 22, 2026 disposable-app campaign passed serial
-// apply/update/no-op/import/forget/restore lifecycles for all 25 modules.
+// apply/update/no-op/import/forget/restore lifecycles for all 25 modules, and
+// acceleration completed its own recorded dev1 lifecycle on 2026-09-15.
 // Keep this list explicit so later generated additions still require their own
 // recorded live evidence before promotion.
 var liveVerifiedGeneratedAppModules = stringSet(
@@ -213,6 +217,7 @@ var liveVerifiedGeneratedAppModules = stringSet(
 	"rewriting_requests",
 	"api_gateway",
 	"caching_compression",
+	"acceleration",
 )
 
 var frameworkCustomImplementedAppModules = stringSet(
@@ -244,6 +249,8 @@ var explicitlyUnsupportedAppModules = stringSet(
 	"server_crl",
 	"ca_certificate",
 	"crl_certificate",
+	"cert_proxy",
+	"dns_resolve",
 )
 
 var generatedPlannedAppModules = stringSet()
@@ -257,7 +264,9 @@ var designCustomAppModules = stringSet(
 
 var schemaCustomAppModules = stringSet(
 	"ca_certificate",
+	"cert_proxy",
 	"cors_protection",
+	"dns_resolve",
 	"crl_certificate",
 	"endpoint",
 	"global_trust_list_parameter",
@@ -286,6 +295,7 @@ var allAppModuleSet = mergeStringSets(
 )
 
 var templateModulePairs = stringSet(
+	"acceleration",
 	"account_takeover",
 	"anomaly_detection",
 	"api_gateway",
@@ -354,6 +364,7 @@ var appGetOnlySegments = stringSet(
 	"sni_cert_detail",
 	"threat_view/statistics",
 	"threat_view/threat_map",
+	"traffic_summary/agent_statistics",
 	"traffic_summary/ip_statistics",
 	"traffic_summary/method_statistics",
 	"traffic_summary/retcode_statistics",
@@ -383,8 +394,10 @@ var appPutOnlySegments = stringSet(
 )
 
 var nestedAppOperations = map[string][]string{
-	"authentication_proxy/settings": {"GET", "PUT"},
-	"vs/{action}":                   {"GET", "PUT"},
+	"authentication_proxy/settings":        {"GET", "PUT"},
+	"endpoint/cert_domains/{uuid}":         {"GET"},
+	"endpoint/cert_domains/{uuid}/refresh": {"PUT"},
+	"vs/{action}":                          {"GET", "PUT"},
 }
 
 var appPostSegments = stringSet(
@@ -1013,7 +1026,7 @@ func appModuleClientMethod(module, method string) string {
 			return "GetAccountTakeover"
 		}
 		return "PutAccountTakeover"
-	case "csrf_protection", "url_access", "request_limits", "known_attacks", "http_header_security", "graphql_protection", "json_protection", "parameter_validation", "web_socket_security", "information_leakage", "ddos_prevention", "cookie_security", "known_bots", "bot_deception", "biometrics_based_detection", "waiting_room", "mitb_protection", "threshold_detection", "ml_bot_detection", "file_protection", "mobile_api_protection", "xml_protection_policy", "rewriting_requests", "api_gateway", "caching_compression":
+	case "csrf_protection", "url_access", "request_limits", "known_attacks", "http_header_security", "graphql_protection", "json_protection", "parameter_validation", "web_socket_security", "information_leakage", "ddos_prevention", "cookie_security", "known_bots", "bot_deception", "biometrics_based_detection", "waiting_room", "mitb_protection", "threshold_detection", "ml_bot_detection", "file_protection", "mobile_api_protection", "xml_protection_policy", "rewriting_requests", "api_gateway", "caching_compression", "acceleration":
 		if method == "GET" {
 			return "GetWAFModule"
 		}

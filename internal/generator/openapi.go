@@ -792,7 +792,8 @@ func validateGeneratedResourceSchema(root SchemaIR, resource contract.ReviewedCa
 				// string "1" both yield "1"), so the default check is shared.
 				defaultStr := fmt.Sprint(idx.Default)
 				allowNoDefault := resource.TerraformName == contract.GraphQLProtectionResource.TerraformName
-				allowZeroDefault := resource.TerraformName == contract.FileProtectionResource.TerraformName && field.Name == "custom_file_types"
+				allowZeroDefault := (resource.TerraformName == contract.FileProtectionResource.TerraformName && field.Name == "custom_file_types") ||
+					(resource.TerraformName == contract.AccelerationResource.TerraformName && field.Name == "exception_list")
 				if defaultStr != "1" && !(allowNoDefault && defaultStr == "<nil>") && !(allowZeroDefault && defaultStr == "0") {
 					return fmt.Errorf("configs.%s.item.idx default changed", field.Name)
 				}
@@ -1055,7 +1056,8 @@ func validateCollectionItemFields(collection string, itemSchema SchemaIR, review
 				return fmt.Errorf("collection %s item idx kind = %q, want %q", collection, idx.Kind, expected.Kind)
 			}
 			defaultStr := fmt.Sprint(idx.Default)
-			allowZeroDefault := resourceName == contract.FileProtectionResource.TerraformName && collection == "custom_file_types"
+			allowZeroDefault := (resourceName == contract.FileProtectionResource.TerraformName && collection == "custom_file_types") ||
+				(resourceName == contract.AccelerationResource.TerraformName && collection == "(shared)")
 			if (defaultStr != "1" && !(allowZeroDefault && defaultStr == "0")) || idx.Minimum != nil || idx.Maximum != nil || idx.ReadOnly != nil {
 				return fmt.Errorf("collection %s item idx constraints changed", collection)
 			}

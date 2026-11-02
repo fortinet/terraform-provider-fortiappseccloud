@@ -38,6 +38,7 @@ func TestGenerateIsDeterministic(t *testing.T) {
 	wantPaths := []string{
 		manifestOutputPath,
 		registerOutputPath,
+		resourceOutputPath("waf_acceleration"),
 		resourceOutputPath("waf_api_gateway"),
 		resourceOutputPath("waf_biometrics_based_detection"),
 		resourceOutputPath("waf_bot_deception"),
@@ -63,6 +64,7 @@ func TestGenerateIsDeterministic(t *testing.T) {
 		resourceOutputPath("waf_waiting_room"),
 		resourceOutputPath("waf_web_socket_security"),
 		resourceOutputPath("waf_xml_protection_policy"),
+		docsOutputPath("waf_acceleration"),
 		docsOutputPath("waf_api_gateway"),
 		docsOutputPath("waf_biometrics_based_detection"),
 		docsOutputPath("waf_bot_deception"),
@@ -88,6 +90,7 @@ func TestGenerateIsDeterministic(t *testing.T) {
 		docsOutputPath("waf_waiting_room"),
 		docsOutputPath("waf_web_socket_security"),
 		docsOutputPath("waf_xml_protection_policy"),
+		templateDocsOutputPath("waf_acceleration"),
 		templateDocsOutputPath("waf_api_gateway"),
 		templateDocsOutputPath("waf_biometrics_based_detection"),
 		templateDocsOutputPath("waf_bot_deception"),
@@ -230,15 +233,15 @@ func TestGeneratedManifestProvenanceAndVerticalSlice(t *testing.T) {
 	if err := json.Unmarshal(outputs[manifestOutputPath], &manifest); err != nil {
 		t.Fatalf("decode generated manifest: %v", err)
 	}
-	if manifest.Generated != generatedMarker || manifest.OpenAPI.Version != "26.3.a" || manifest.OpenAPI.SHA256 != "be3d23f9d9bdfcc966acdb0277ec59bf9dbc183a9cae83a86f217dfdf609d38e" {
+	if manifest.Generated != generatedMarker || manifest.OpenAPI.Version != "26.4" || manifest.OpenAPI.SHA256 != "c96ba675c156cb5846bd70c7dbc820cc3ac39c72fbbd4deda71f27d9152d6741" {
 		t.Fatalf("manifest source/header = %#v / %q", manifest.OpenAPI, manifest.Generated)
 	}
 	if !manifest.Scope.FullWAFClassification || manifest.Scope.Classification != "complete_public_waf_operation_matrix" ||
-		manifest.Scope.PublicOperationCount != 256 || manifest.Scope.NonPublicOperationCount != 6 ||
-		len(manifest.Scope.Operations) != 256 {
+		manifest.Scope.PublicOperationCount != 267 || manifest.Scope.NonPublicOperationCount != 6 ||
+		len(manifest.Scope.Operations) != 267 {
 		t.Fatalf("manifest scope = %#v", manifest.Scope)
 	}
-	if manifest.Scope.SelectedResourceCount != 25 || len(manifest.Resources) != 25 {
+	if manifest.Scope.SelectedResourceCount != 26 || len(manifest.Resources) != 26 {
 		t.Fatalf("selected resource count = %d, resources = %d", manifest.Scope.SelectedResourceCount, len(manifest.Resources))
 	}
 	if manifest.Scope.NextGeneratedResource != nil {
@@ -445,6 +448,10 @@ func TestGeneratedManifestProvenanceAndVerticalSlice(t *testing.T) {
 			if len(resource.Reviewed.Collections) != 2 {
 				t.Fatalf("API gateway collections = %d, want 2", len(resource.Reviewed.Collections))
 			}
+		case contract.AccelerationResource.TerraformName:
+			if len(resource.Reviewed.Collections) != 1 {
+				t.Fatalf("acceleration collections = %d, want 1", len(resource.Reviewed.Collections))
+			}
 		case contract.CachingCompressionResource.TerraformName:
 			if strings.Contains(resource.Reviewed.Provenance, "Live GET") ||
 				strings.Contains(resource.Reviewed.Provenance, "apply/import/restore probes verified") {
@@ -457,8 +464,8 @@ func TestGeneratedManifestProvenanceAndVerticalSlice(t *testing.T) {
 			t.Fatalf("unexpected generated resource %q", resource.TerraformName)
 		}
 	}
-	if disableCandidates != 24 || activeDisables != 24 {
-		t.Fatalf("generated destroy policies: candidates=%d active=%d, want 24/24", disableCandidates, activeDisables)
+	if disableCandidates != 25 || activeDisables != 25 {
+		t.Fatalf("generated destroy policies: candidates=%d active=%d, want 25/25", disableCandidates, activeDisables)
 	}
 	for _, name := range []string{contract.CSRFProtectionResource.TerraformName, contract.URLAccessCandidate.TerraformName, contract.RequestLimitsResource.TerraformName} {
 		if _, ok := seenResources[name]; !ok {

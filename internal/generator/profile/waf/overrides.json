@@ -5580,6 +5580,152 @@
         "provenance": "The complete and focused dev1 template-destroy runs isolated the only failure to caching/compression. A follow-up direct curl control against a disposable unbound template sent a preserving full-document PUT with only configs.status=false; it returned HTTP 200 but GET retained true/true/true. Setting configs.status, configs.cache.status, and configs.compress.status false together returned HTTP 200 and GET returned false/false/false. Snapshot restoration and disposable-template cleanup passed."
       },
       "provenance": "Reviewed caching and compression app-level contract for the twenty-fifth generated resource."
+    },
+    {
+      "terraform_name": "fortiappseccloud_waf_acceleration",
+      "go_name": "Acceleration",
+      "type_name_suffix": "waf_acceleration",
+      "operation_name": "web content acceleration",
+      "get_path": "/waf/apps/{ep_id}/acceleration",
+      "put_path": "/waf/apps/{ep_id}/acceleration",
+      "mode": "generated",
+      "identity": {
+        "attribute": "ep_id",
+        "import_format": "ep_id",
+        "requires_replace": true,
+        "provenance": "Reviewed app-scoped lifecycle identity; the pinned static acceleration endpoint has exactly one ep_id path placeholder and the shared generated runtime imports by ep_id."
+      },
+      "template_configs": {
+        "template_attribute": "template",
+        "configs_block": "configs",
+        "required_when_template_false": true,
+        "forbidden_when_template_true": true,
+        "suppress_configs_state_when_template_true": true,
+        "provenance": "Reviewed against the shared app-module lifecycle and the pinned required configs/template envelope. The template endpoint reuses the exact app PutAcceleration/GetAcceleration schema pair."
+      },
+      "fields": [
+        {
+          "path": "ep_id",
+          "terraform_policy": "required",
+          "use_state_for_unknown": false,
+          "wire_only": false,
+          "provenance": "The app endpoint identity and import ID are both ep_id."
+        },
+        {
+          "path": "template",
+          "terraform_policy": "required",
+          "use_state_for_unknown": false,
+          "wire_only": false,
+          "provenance": "The pinned PUT envelope requires template and the shared lifecycle must know inheritance during apply."
+        },
+        {
+          "path": "configs.status",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "Omission preserves the current GET value rather than inferring disable semantics from the source default false. The accepted dev1 lifecycle verified configs.status=false as the module disable write."
+        },
+        {
+          "path": "configs.css_minify",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "Optional boolean minify-CSS switch pinned from the Acceleration schema; omission preserves the GET value."
+        },
+        {
+          "path": "configs.html_combine_heads",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "Optional boolean combine-HTML-head switch pinned from the Acceleration schema; omission preserves the GET value."
+        },
+        {
+          "path": "configs.html_css2head",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "Optional boolean move-CSS-to-head switch pinned from the Acceleration schema; omission preserves the GET value."
+        },
+        {
+          "path": "configs.html_minify",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "Optional boolean minify-HTML switch pinned from the Acceleration schema; omission preserves the GET value."
+        },
+        {
+          "path": "configs.js_minify",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "Optional boolean minify-JavaScript switch pinned from the Acceleration schema; omission preserves the GET value."
+        },
+        {
+          "path": "configs.exception_list.item.idx",
+          "terraform_policy": "wire_only",
+          "use_state_for_unknown": false,
+          "wire_only": true,
+          "provenance": "idx is positional rather than immutable identity and is regenerated sequentially from Terraform exception order."
+        },
+        {
+          "path": "configs.exception_list.item.host",
+          "terraform_policy": "optional_computed",
+          "use_state_for_unknown": true,
+          "wire_only": false,
+          "provenance": "The pinned AccelerationException schema limits the optional host to 255 UTF-8 characters and does not require it."
+        },
+        {
+          "path": "configs.exception_list.item.host_status",
+          "terraform_policy": "required",
+          "use_state_for_unknown": false,
+          "wire_only": false,
+          "provenance": "The pinned AccelerationException schema requires host_status. Terraform requires explicit intent instead of silently applying the source default false."
+        },
+        {
+          "path": "configs.exception_list.item.url_pattern",
+          "terraform_policy": "required",
+          "use_state_for_unknown": false,
+          "wire_only": false,
+          "provenance": "The pinned AccelerationException schema requires url_pattern and limits it to 255 UTF-8 characters."
+        },
+        {
+          "path": "configs.exception_list.item.url_type",
+          "terraform_policy": "required",
+          "use_state_for_unknown": false,
+          "wire_only": false,
+          "provenance": "The pinned AccelerationException schema requires url_type and permits exactly string or regex; the accepted dev1 lifecycle verified a url_type=string exception through apply and restoration."
+        }
+      ],
+      "collections": [
+        {
+          "path": "configs.exception_list",
+          "encoding": "single_nested_ownership_wrapper_with_list_nested_block",
+          "wrapper_block": "exception_list",
+          "item_block": "item",
+          "ordered": true,
+          "omitted_behavior": "preserve_raw_and_keep_state_null",
+          "empty_behavior": "replace_with_empty_array",
+          "populated_behavior": "replace_complete_ordered_array",
+          "hidden_index": "sequential_one_based_idx",
+          "unknown_item_keys": "fail_closed_when_owned_or_imported",
+          "provenance": "Protocol 5 ownership wrapper for the acceleration exception_list. Bounded (max 256). The accepted dev1 lifecycle verified the populated exception apply, no-op, and restoration; live behavior otherwise follows the shared generated lifecycle."
+        }
+      ],
+      "destroy": {
+        "mode": "disable",
+        "verified": true,
+        "field": "status",
+        "reason": "Exact module-specific disable-on-destroy lifecycle live-verified in the accepted complete dev1 matrix",
+        "provenance": "Accepted dev1 evidence: the exact module endpoint passed fresh GET, complete-response-preserving PUT with template=false and configs.status=false, normalized verification GET, and exact snapshot restoration. The complete campaign passed every planned row with cleanup."
+      },
+      "template_destroy": {
+        "mode": "disable",
+        "verified": true,
+        "field": "status",
+        "reason": "Template module configs.status=false disable behavior was verified in the accepted complete dev1 template matrix and confirmed as the module disable API behavior",
+        "provenance": "Accepted dev1 evidence: the typed template module passed a live configs.status=false write and verification on a disposable template. The API behavior was subsequently confirmed: configs.status=false disables the module. The shared preserving destroy runtime is covered locally through the served Terraform Delete path."
+      },
+      "provenance": "Reviewed web content acceleration app-level contract for the twenty-sixth generated resource. The pinned public GET/PUT operations share the required configs/template envelope, the boolean config scalars are optional, and the ordered exception_list uses positional idx values with the string|regex url_type discriminator. No POST or DELETE exists and the descriptor requires no shared runtime change."
     }
   ]
 }

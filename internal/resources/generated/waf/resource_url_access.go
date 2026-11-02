@@ -260,7 +260,7 @@ func (urlAccessCodec) Schema(context.Context) schema.Schema {
 						},
 						"url_type": schema.StringAttribute{
 							Required:            true,
-							MarkdownDescription: "Selects literal string or regular-expression matching. String URLs must begin with /; regular-expression syntax is validated by the backend. Reviewed backend-only discriminator absent from the pinned OpenAPI schema.",
+							MarkdownDescription: "Selects literal string or regular-expression matching; regular-expression syntax is validated by the API.",
 							Validators:          []validator.String{stringvalidator.OneOf("regex", "string")},
 						},
 					}, map[string]schema.Block{}),

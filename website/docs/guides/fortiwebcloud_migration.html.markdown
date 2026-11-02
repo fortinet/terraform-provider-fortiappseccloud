@@ -9,7 +9,7 @@ description: |-
 
 This guide covers only the provider-address and resource-name migration from the historical private provider to public provider version `1.0.5`. The legacy configuration shown below is not valid v2 configuration, so the version is intentionally pinned instead of using an open-ended constraint that could select v2.
 
-After this migration is complete, follow the [v1.0.5 to v2.0 upgrade guide](v1_0_5_to_v2_0_0.html) before selecting provider version `2.0.0` or later. The v2 provider upgrades same-provider v1.0.5 state in-process; do not manually edit state JSON for that separate upgrade.
+After this migration is complete, follow the [v1.0.5 to v2.0 upgrade guide](v1_0_5_to_v2_0_0) before selecting provider version `2.0.0` or later. The v2 provider upgrades same-provider v1.0.5 state in-process; do not manually edit state JSON for that separate upgrade.
 
 ## Important Notes
 **State File Backup**: Before modifying the state file, ensure it is backed up to prevent data loss.
@@ -118,7 +118,7 @@ output "cname" {
 }
 ```
 
-Keep the singular `cname` attribute during this private-provider-to-v1.0.5 migration. Public provider v1.0.5 still exposes `cname` as a computed string. The separate [v1.0.5 to v2.0 upgrade](v1_0_5_to_v2_0_0.html) replaces it with the computed `cnames` list.
+Keep the singular `cname` attribute during this private-provider-to-v1.0.5 migration. Public provider v1.0.5 still exposes `cname` as a computed string. The separate [v1.0.5 to v2.0 upgrade](v1_0_5_to_v2_0_0) replaces it with the computed `cnames` list.
 
 Then initialize Terraform to automatically download the new provider:
 

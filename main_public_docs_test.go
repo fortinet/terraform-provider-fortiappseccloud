@@ -71,8 +71,8 @@ func TestPublicDocumentationUsesRegistryFrontmatter(t *testing.T) {
 		t.Fatal(err)
 	}
 	paths = append(paths, rootPages...)
-	if len(paths) != 75 {
-		t.Fatalf("public documentation pages = %d, want 75", len(paths))
+	if len(paths) != 77 {
+		t.Fatalf("public documentation pages = %d, want 77", len(paths))
 	}
 	for _, path := range paths {
 		raw, err := os.ReadFile(path)
@@ -225,7 +225,7 @@ func TestWAFConfigurationGuidanceCoversScopeAndImportSafety(t *testing.T) {
 		"are not disabled merely because the application was imported",
 		"keep each specific module resource declared in HCL",
 		"Removing its HCL block after import therefore plans a Terraform destroy that disables that live module",
-		"All 31 typed template-module resources also use disable-on-destroy.",
+		"All 32 typed template-module resources also use disable-on-destroy.",
 		"caching/compression additionally sets `configs.cache.status = false` and `configs.compress.status = false`",
 		"terraform state rm fortiappseccloud_waf_known_attacks.baseline",
 	} {
@@ -247,8 +247,8 @@ func TestWAFResourceDocumentationHasCompleteExamples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(paths) != 69 {
-		t.Fatalf("WAF resource documentation pages = %d, want 69", len(paths))
+	if len(paths) != 71 {
+		t.Fatalf("WAF resource documentation pages = %d, want 71", len(paths))
 	}
 	for _, path := range paths {
 		raw, err := os.ReadFile(path)
@@ -417,8 +417,9 @@ provider "fortiappseccloud" {
 
 	cli := buildTerraformCLIProvider(t, terraformPath, repositoryRoot, temporaryRoot)
 	result := cli.run(t, workDir, "plan", "-detailed-exitcode", "-refresh=false", "-input=false", "-no-color", "-lock=false", "-var=mobile_api_token_secret=documentation-validation-secret")
-	if result.ExitCode != 2 || !strings.Contains(result.output(), "Plan: 69 to add, 0 to change, 0 to destroy.") {
-		t.Fatalf("documentation example plan did not validate all 69 WAF resources (exit code %d)\n%s", result.ExitCode, result.output())
+	wantPlan := fmt.Sprintf("Plan: %d to add, 0 to change, 0 to destroy.", len(paths))
+	if result.ExitCode != 2 || !strings.Contains(result.output(), wantPlan) {
+		t.Fatalf("documentation example plan did not validate all %d WAF resources (exit code %d)\n%s", len(paths), result.ExitCode, result.output())
 	}
 }
 

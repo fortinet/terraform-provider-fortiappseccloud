@@ -11,6 +11,8 @@ import (
 // Resources returns the generated app- and template-scoped WAF resources.
 func Resources(locks *locking.Registry) []func() resource.Resource {
 	return []func() resource.Resource{
+		func() resource.Resource { return NewAccelerationResource(locks) },
+		func() resource.Resource { return NewTemplateAccelerationResource(locks) },
 		func() resource.Resource { return NewAPIGatewayResource(locks) },
 		func() resource.Resource { return NewTemplateAPIGatewayResource(locks) },
 		func() resource.Resource { return NewBiometricsBasedDetectionResource(locks) },

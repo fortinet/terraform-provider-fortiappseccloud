@@ -278,7 +278,7 @@ var URLAccessCandidate = ReviewedCandidate{
 
 // ImplementedGeneratedResources returns the deterministic reviewed resource set.
 func ImplementedGeneratedResources() []ReviewedCandidate {
-	resources := []ReviewedCandidate{CSRFProtectionResource, URLAccessCandidate, RequestLimitsResource, KnownAttacksResource, HttpHeaderSecurityResource, GraphQLProtectionResource, JsonProtectionResource, ParameterValidationResource, WebSocketSecurityResource, InformationLeakageResource, DDoSPreventionResource, CookieSecurityResource, KnownBotsResource, BotDeceptionResource, BiometricsBasedDetectionResource, WaitingRoomResource, MITBProtectionResource, ThresholdDetectionResource, MLBotDetectionResource, FileProtectionResource, MobileAPIProtectionResource, XMLProtectionPolicyResource, RewritingRequestsResource, APIGatewayResource, CachingCompressionResource}
+	resources := []ReviewedCandidate{CSRFProtectionResource, URLAccessCandidate, RequestLimitsResource, KnownAttacksResource, HttpHeaderSecurityResource, GraphQLProtectionResource, JsonProtectionResource, ParameterValidationResource, WebSocketSecurityResource, InformationLeakageResource, DDoSPreventionResource, CookieSecurityResource, KnownBotsResource, BotDeceptionResource, BiometricsBasedDetectionResource, WaitingRoomResource, MITBProtectionResource, ThresholdDetectionResource, MLBotDetectionResource, FileProtectionResource, MobileAPIProtectionResource, XMLProtectionPolicyResource, RewritingRequestsResource, APIGatewayResource, CachingCompressionResource, AccelerationResource}
 	for index := range resources {
 		resources[index].ExpectedMethods = append([]string(nil), resources[index].ExpectedMethods...)
 		resources[index].Schema.ConfigFields = cloneCandidateFieldConstraints(resources[index].Schema.ConfigFields)

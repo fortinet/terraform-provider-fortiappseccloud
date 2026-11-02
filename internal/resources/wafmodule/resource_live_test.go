@@ -136,8 +136,8 @@ func TestDisableLiveCandidateInventory(t *testing.T) {
 	t.Parallel()
 
 	candidates := reviewedDisableCandidates(t)
-	if len(candidates) != 29 {
-		t.Fatalf("reviewed live disable candidates = %d, want 29", len(candidates))
+	if len(candidates) != 30 {
+		t.Fatalf("reviewed live disable candidates = %d, want 30", len(candidates))
 	}
 	for _, ineligible := range []string{"caching_compression", "global_trust_list_parameter", "routings"} {
 		if _, ok := candidates[ineligible]; ok {

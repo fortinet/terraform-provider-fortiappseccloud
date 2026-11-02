@@ -528,8 +528,8 @@ func TestCSRFProtectionRegistryIsUnique(t *testing.T) {
 	}
 
 	constructors := Resources(nil)
-	if len(constructors) != 50 {
-		t.Fatalf("Resources() = %d, want 50", len(constructors))
+	if len(constructors) != 52 {
+		t.Fatalf("Resources() = %d, want 52", len(constructors))
 	}
 	ctx := context.Background()
 	seen := map[string]struct{}{}

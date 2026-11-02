@@ -52,8 +52,8 @@ func TestGeneratedManifestCoversRegisteredModules(t *testing.T) {
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
 		t.Fatalf("decode generated manifest: %v", err)
 	}
-	if manifest.Scope.SelectedResourceCount != 25 || len(manifest.Resources) != 25 {
-		t.Fatalf("manifest generated resource counts = %d/%d, want 25/25", manifest.Scope.SelectedResourceCount, len(manifest.Resources))
+	if manifest.Scope.SelectedResourceCount != 26 || len(manifest.Resources) != 26 {
+		t.Fatalf("manifest generated resource counts = %d/%d, want 26/26", manifest.Scope.SelectedResourceCount, len(manifest.Resources))
 	}
 
 	server := providerserver.NewProtocol5(frameworkprovider.New("test", "test")())()
@@ -61,23 +61,23 @@ func TestGeneratedManifestCoversRegisteredModules(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get provider schema: %v", err)
 	}
-	if len(schemas.ResourceSchemas) != 69 || len(schemas.DataSourceSchemas) != 2 {
-		t.Fatalf("served schema counts = %d resources/%d data sources, want 69/2", len(schemas.ResourceSchemas), len(schemas.DataSourceSchemas))
+	if len(schemas.ResourceSchemas) != 71 || len(schemas.DataSourceSchemas) != 2 {
+		t.Fatalf("served schema counts = %d resources/%d data sources, want 71/2", len(schemas.ResourceSchemas), len(schemas.DataSourceSchemas))
 	}
 
-	planData, err := os.ReadFile(filepath.Join("plan", "2026-08-04-living-unit-test-plan.md"))
+	indexData, err := os.ReadFile(filepath.Join("website", "docs", "index.html.markdown"))
 	if err != nil {
-		t.Fatalf("read living unit-test plan: %v", err)
+		t.Fatalf("read public documentation index: %v", err)
 	}
-	plan := string(planData)
+	index := string(indexData)
 	for typeName := range schemas.ResourceSchemas {
-		if !strings.Contains(plan, typeName) {
-			t.Errorf("living plan is missing served resource %q", typeName)
+		if !strings.Contains(index, typeName) {
+			t.Errorf("public documentation index is missing served resource %q", typeName)
 		}
 	}
 	for typeName := range schemas.DataSourceSchemas {
-		if !strings.Contains(plan, typeName) {
-			t.Errorf("living plan is missing served data source %q", typeName)
+		if !strings.Contains(index, typeName) {
+			t.Errorf("public documentation index is missing served data source %q", typeName)
 		}
 	}
 
@@ -96,8 +96,8 @@ func TestGeneratedManifestCoversRegisteredModules(t *testing.T) {
 	for _, candidate := range reviewed {
 		reviewedByName[candidate.TerraformName] = candidate
 	}
-	if len(reviewedByName) != 25 {
-		t.Fatalf("reviewed generated resources = %d, want 25", len(reviewedByName))
+	if len(reviewedByName) != 26 {
+		t.Fatalf("reviewed generated resources = %d, want 26", len(reviewedByName))
 	}
 
 	manifestNames := make([]string, 0, len(manifest.Resources))
@@ -138,8 +138,8 @@ func TestGeneratedManifestCoversRegisteredModules(t *testing.T) {
 					t.Errorf("required generated artifact %q is missing: %v", requiredFile, statErr)
 				}
 			}
-			if !strings.Contains(plan, generated.TerraformName) || !strings.Contains(plan, templateType) {
-				t.Errorf("living plan does not contain generated resource pair %q/%q", generated.TerraformName, templateType)
+			if !strings.Contains(index, generated.TerraformName) || !strings.Contains(index, templateType) {
+				t.Errorf("public documentation index does not contain generated resource pair %q/%q", generated.TerraformName, templateType)
 			}
 		})
 		manifestNames = append(manifestNames, generated.TerraformName)
@@ -186,7 +186,9 @@ func TestTerraformDocumentationInventoryMatchesProviderSchema(t *testing.T) {
 		for typeName := range served {
 			fileName := strings.TrimPrefix(typeName, "fortiappseccloud_") + ".html.markdown"
 			wantFiles = append(wantFiles, fileName)
-			link := "[`" + typeName + "`](" + linkDirectory + "/" + strings.TrimSuffix(fileName, ".markdown") + ")"
+			// The Terraform Registry serves documentation without a .html
+			// suffix, so registry-relative links must be extension-less.
+			link := "[`" + typeName + "`](" + linkDirectory + "/" + strings.TrimSuffix(strings.TrimSuffix(fileName, ".markdown"), ".html") + ")"
 			if !strings.Contains(index, link) {
 				t.Errorf("provider index is missing %s link %q", kind, link)
 			}

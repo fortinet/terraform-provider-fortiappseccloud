@@ -2842,7 +2842,7 @@ func fieldDescription(field ItemFieldRender) string {
 	case "url":
 		return "Request URL"
 	case "url_type":
-		return "Whether the url field is matched as a literal string or a backend-validated regular expression"
+		return "Selects literal string or regular-expression matching; regular-expression syntax is validated by the API"
 	case "name":
 		if field.AllowWireNull {
 			return "Parameter name"
@@ -3325,7 +3325,7 @@ func itemFieldDescription(field ItemFieldRender) string {
 	case "action":
 		return "Action for detected rule violations."
 	case "url_type":
-		return "Selects literal string or regular-expression matching. String URLs must begin with /; regular-expression syntax is validated by the backend. Reviewed backend-only discriminator absent from the pinned OpenAPI schema."
+		return "Selects literal string or regular-expression matching; regular-expression syntax is validated by the API."
 	default:
 		return field.Name
 	}

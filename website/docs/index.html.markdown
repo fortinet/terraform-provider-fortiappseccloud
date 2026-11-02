@@ -66,102 +66,104 @@ Configure exactly one authentication mode: `api_token`, or `username` together w
 
 ## Important Usage Guidance
 
-Before managing WAF modules or importing an existing application, review the [WAF configuration and import guidance](guides/waf_configuration_guidance.html). It explains explicit origin-server ownership, unsupported log and certificate-upload features, recommended protections, and module disable-on-destroy behavior.
+Before managing WAF modules or importing an existing application, review the [WAF configuration and import guidance](guides/waf_configuration_guidance). It explains explicit origin-server ownership, unsupported log and certificate-upload features, recommended protections, and module disable-on-destroy behavior.
 
 ## Upgrade Guide
 
-Before upgrading existing public-provider state from v1.0.5, follow the [v1.0.5 to v2.0 migration guide](guides/v1_0_5_to_v2_0_0.html).
+Before upgrading existing public-provider state from v1.0.5, follow the [v1.0.5 to v2.0 migration guide](guides/v1_0_5_to_v2_0_0).
 
 ## Resources
 
-The provider serves 69 resources: application lifecycle resources, 34 app-level WAF configuration resources, one base template resource, one template-attachment resource, and 31 typed template-module resources.
+The provider serves 71 resources: application lifecycle resources, 35 app-level WAF configuration resources, one base template resource, one template-attachment resource, and 32 typed template-module resources.
 
 ### Application lifecycle
 
-* [`fortiappseccloud_waf_app`](r/waf_app.html) - Onboards and manages a WAF application.
-* [`fortiappseccloud_waf_origin_servers`](r/waf_origin_servers.html) - Owns the application's complete origin server-pool configuration.
+* [`fortiappseccloud_waf_app`](r/waf_app) - Onboards and manages a WAF application.
+* [`fortiappseccloud_waf_origin_servers`](r/waf_origin_servers) - Owns the application's complete origin server-pool configuration.
 
 ### Application WAF configuration
 
-* [`fortiappseccloud_waf_account_takeover`](r/waf_account_takeover.html)
-* [`fortiappseccloud_waf_anomaly_detection`](r/waf_anomaly_detection.html)
-* [`fortiappseccloud_waf_api_gateway`](r/waf_api_gateway.html)
-* [`fortiappseccloud_waf_biometrics_based_detection`](r/waf_biometrics_based_detection.html)
-* [`fortiappseccloud_waf_bot_deception`](r/waf_bot_deception.html)
-* [`fortiappseccloud_waf_caching_compression`](r/waf_caching_compression.html)
-* [`fortiappseccloud_waf_content_routing`](r/waf_content_routing.html)
-* [`fortiappseccloud_waf_cookie_security`](r/waf_cookie_security.html)
-* [`fortiappseccloud_waf_cors_protection`](r/waf_cors_protection.html)
-* [`fortiappseccloud_waf_csrf_protection`](r/waf_csrf_protection.html)
-* [`fortiappseccloud_waf_custom_rule`](r/waf_custom_rule.html)
-* [`fortiappseccloud_waf_ddos_prevention`](r/waf_ddos_prevention.html)
-* [`fortiappseccloud_waf_file_protection`](r/waf_file_protection.html)
-* [`fortiappseccloud_waf_global_trust_list_parameter`](r/waf_global_trust_list_parameter.html)
-* [`fortiappseccloud_waf_graphql_protection`](r/waf_graphql_protection.html)
-* [`fortiappseccloud_waf_http_header_security`](r/waf_http_header_security.html)
-* [`fortiappseccloud_waf_information_leakage`](r/waf_information_leakage.html)
-* [`fortiappseccloud_waf_ip_protection`](r/waf_ip_protection.html)
-* [`fortiappseccloud_waf_json_protection`](r/waf_json_protection.html)
-* [`fortiappseccloud_waf_known_attacks`](r/waf_known_attacks.html)
-* [`fortiappseccloud_waf_known_bots`](r/waf_known_bots.html)
-* [`fortiappseccloud_waf_mitb_protection`](r/waf_mitb_protection.html)
-* [`fortiappseccloud_waf_ml_api_protection`](r/waf_ml_api_protection.html)
-* [`fortiappseccloud_waf_ml_bot_detection`](r/waf_ml_bot_detection.html)
-* [`fortiappseccloud_waf_mobile_api_protection`](r/waf_mobile_api_protection.html)
-* [`fortiappseccloud_waf_openapi_validation`](r/waf_openapi_validation.html)
-* [`fortiappseccloud_waf_parameter_validation`](r/waf_parameter_validation.html)
-* [`fortiappseccloud_waf_request_limits`](r/waf_request_limits.html)
-* [`fortiappseccloud_waf_rewriting_requests`](r/waf_rewriting_requests.html)
-* [`fortiappseccloud_waf_threshold_detection`](r/waf_threshold_detection.html)
-* [`fortiappseccloud_waf_url_access`](r/waf_url_access.html)
-* [`fortiappseccloud_waf_waiting_room`](r/waf_waiting_room.html)
-* [`fortiappseccloud_waf_web_socket_security`](r/waf_web_socket_security.html)
-* [`fortiappseccloud_waf_xml_protection_policy`](r/waf_xml_protection_policy.html)
+* [`fortiappseccloud_waf_acceleration`](r/waf_acceleration)
+* [`fortiappseccloud_waf_account_takeover`](r/waf_account_takeover)
+* [`fortiappseccloud_waf_anomaly_detection`](r/waf_anomaly_detection)
+* [`fortiappseccloud_waf_api_gateway`](r/waf_api_gateway)
+* [`fortiappseccloud_waf_biometrics_based_detection`](r/waf_biometrics_based_detection)
+* [`fortiappseccloud_waf_bot_deception`](r/waf_bot_deception)
+* [`fortiappseccloud_waf_caching_compression`](r/waf_caching_compression)
+* [`fortiappseccloud_waf_content_routing`](r/waf_content_routing)
+* [`fortiappseccloud_waf_cookie_security`](r/waf_cookie_security)
+* [`fortiappseccloud_waf_cors_protection`](r/waf_cors_protection)
+* [`fortiappseccloud_waf_csrf_protection`](r/waf_csrf_protection)
+* [`fortiappseccloud_waf_custom_rule`](r/waf_custom_rule)
+* [`fortiappseccloud_waf_ddos_prevention`](r/waf_ddos_prevention)
+* [`fortiappseccloud_waf_file_protection`](r/waf_file_protection)
+* [`fortiappseccloud_waf_global_trust_list_parameter`](r/waf_global_trust_list_parameter)
+* [`fortiappseccloud_waf_graphql_protection`](r/waf_graphql_protection)
+* [`fortiappseccloud_waf_http_header_security`](r/waf_http_header_security)
+* [`fortiappseccloud_waf_information_leakage`](r/waf_information_leakage)
+* [`fortiappseccloud_waf_ip_protection`](r/waf_ip_protection)
+* [`fortiappseccloud_waf_json_protection`](r/waf_json_protection)
+* [`fortiappseccloud_waf_known_attacks`](r/waf_known_attacks)
+* [`fortiappseccloud_waf_known_bots`](r/waf_known_bots)
+* [`fortiappseccloud_waf_mitb_protection`](r/waf_mitb_protection)
+* [`fortiappseccloud_waf_ml_api_protection`](r/waf_ml_api_protection)
+* [`fortiappseccloud_waf_ml_bot_detection`](r/waf_ml_bot_detection)
+* [`fortiappseccloud_waf_mobile_api_protection`](r/waf_mobile_api_protection)
+* [`fortiappseccloud_waf_openapi_validation`](r/waf_openapi_validation)
+* [`fortiappseccloud_waf_parameter_validation`](r/waf_parameter_validation)
+* [`fortiappseccloud_waf_request_limits`](r/waf_request_limits)
+* [`fortiappseccloud_waf_rewriting_requests`](r/waf_rewriting_requests)
+* [`fortiappseccloud_waf_threshold_detection`](r/waf_threshold_detection)
+* [`fortiappseccloud_waf_url_access`](r/waf_url_access)
+* [`fortiappseccloud_waf_waiting_room`](r/waf_waiting_room)
+* [`fortiappseccloud_waf_web_socket_security`](r/waf_web_socket_security)
+* [`fortiappseccloud_waf_xml_protection_policy`](r/waf_xml_protection_policy)
 
-Account takeover and OpenAPI validation use their separately reviewed disable behavior. Another 29 app modules with a standalone writable `configs.status` use a guarded GET/PUT/GET disable-on-destroy lifecycle. The app-scoped `fortiappseccloud_waf_caching_compression`, `fortiappseccloud_waf_content_routing`, and `fortiappseccloud_waf_global_trust_list_parameter` resources remain forget-with-warning because they do not have the same safe standalone disable contract. This app-resource behavior does not apply to typed template-module resources; all 31 template-module resources disable their remote template configuration on destroy.
+Account takeover and OpenAPI validation use their separately reviewed disable behavior. Another 30 app modules with a standalone writable `configs.status` use a guarded GET/PUT/GET disable-on-destroy lifecycle. The app-scoped `fortiappseccloud_waf_caching_compression`, `fortiappseccloud_waf_content_routing`, and `fortiappseccloud_waf_global_trust_list_parameter` resources remain forget-with-warning because they do not have the same safe standalone disable contract. This app-resource behavior does not apply to typed template-module resources; all 32 template-module resources disable their remote template configuration on destroy.
 
 ### Template lifecycle and configuration
 
-* [`fortiappseccloud_waf_template`](r/waf_template.html) - Creates, reads, imports, and deletes a user WAF template.
-* [`fortiappseccloud_waf_template_attachment`](r/waf_template_attachment.html) - Owns one application-to-template membership.
-* [`fortiappseccloud_waf_template_account_takeover`](r/waf_template_account_takeover.html)
-* [`fortiappseccloud_waf_template_anomaly_detection`](r/waf_template_anomaly_detection.html)
-* [`fortiappseccloud_waf_template_api_gateway`](r/waf_template_api_gateway.html)
-* [`fortiappseccloud_waf_template_biometrics_based_detection`](r/waf_template_biometrics_based_detection.html)
-* [`fortiappseccloud_waf_template_bot_deception`](r/waf_template_bot_deception.html)
-* [`fortiappseccloud_waf_template_caching_compression`](r/waf_template_caching_compression.html)
-* [`fortiappseccloud_waf_template_cookie_security`](r/waf_template_cookie_security.html)
-* [`fortiappseccloud_waf_template_cors_protection`](r/waf_template_cors_protection.html)
-* [`fortiappseccloud_waf_template_csrf_protection`](r/waf_template_csrf_protection.html)
-* [`fortiappseccloud_waf_template_custom_rule`](r/waf_template_custom_rule.html)
-* [`fortiappseccloud_waf_template_ddos_prevention`](r/waf_template_ddos_prevention.html)
-* [`fortiappseccloud_waf_template_file_protection`](r/waf_template_file_protection.html)
-* [`fortiappseccloud_waf_template_graphql_protection`](r/waf_template_graphql_protection.html)
-* [`fortiappseccloud_waf_template_http_header_security`](r/waf_template_http_header_security.html)
-* [`fortiappseccloud_waf_template_information_leakage`](r/waf_template_information_leakage.html)
-* [`fortiappseccloud_waf_template_ip_protection`](r/waf_template_ip_protection.html)
-* [`fortiappseccloud_waf_template_json_protection`](r/waf_template_json_protection.html)
-* [`fortiappseccloud_waf_template_known_attacks`](r/waf_template_known_attacks.html)
-* [`fortiappseccloud_waf_template_known_bots`](r/waf_template_known_bots.html)
-* [`fortiappseccloud_waf_template_mitb_protection`](r/waf_template_mitb_protection.html)
-* [`fortiappseccloud_waf_template_ml_api_protection`](r/waf_template_ml_api_protection.html)
-* [`fortiappseccloud_waf_template_ml_bot_detection`](r/waf_template_ml_bot_detection.html)
-* [`fortiappseccloud_waf_template_mobile_api_protection`](r/waf_template_mobile_api_protection.html)
-* [`fortiappseccloud_waf_template_parameter_validation`](r/waf_template_parameter_validation.html)
-* [`fortiappseccloud_waf_template_request_limits`](r/waf_template_request_limits.html)
-* [`fortiappseccloud_waf_template_rewriting_requests`](r/waf_template_rewriting_requests.html)
-* [`fortiappseccloud_waf_template_threshold_detection`](r/waf_template_threshold_detection.html)
-* [`fortiappseccloud_waf_template_url_access`](r/waf_template_url_access.html)
-* [`fortiappseccloud_waf_template_waiting_room`](r/waf_template_waiting_room.html)
-* [`fortiappseccloud_waf_template_web_socket_security`](r/waf_template_web_socket_security.html)
-* [`fortiappseccloud_waf_template_xml_protection_policy`](r/waf_template_xml_protection_policy.html)
+* [`fortiappseccloud_waf_template`](r/waf_template) - Creates, reads, imports, and deletes a user WAF template.
+* [`fortiappseccloud_waf_template_attachment`](r/waf_template_attachment) - Owns one application-to-template membership.
+* [`fortiappseccloud_waf_template_acceleration`](r/waf_template_acceleration)
+* [`fortiappseccloud_waf_template_account_takeover`](r/waf_template_account_takeover)
+* [`fortiappseccloud_waf_template_anomaly_detection`](r/waf_template_anomaly_detection)
+* [`fortiappseccloud_waf_template_api_gateway`](r/waf_template_api_gateway)
+* [`fortiappseccloud_waf_template_biometrics_based_detection`](r/waf_template_biometrics_based_detection)
+* [`fortiappseccloud_waf_template_bot_deception`](r/waf_template_bot_deception)
+* [`fortiappseccloud_waf_template_caching_compression`](r/waf_template_caching_compression)
+* [`fortiappseccloud_waf_template_cookie_security`](r/waf_template_cookie_security)
+* [`fortiappseccloud_waf_template_cors_protection`](r/waf_template_cors_protection)
+* [`fortiappseccloud_waf_template_csrf_protection`](r/waf_template_csrf_protection)
+* [`fortiappseccloud_waf_template_custom_rule`](r/waf_template_custom_rule)
+* [`fortiappseccloud_waf_template_ddos_prevention`](r/waf_template_ddos_prevention)
+* [`fortiappseccloud_waf_template_file_protection`](r/waf_template_file_protection)
+* [`fortiappseccloud_waf_template_graphql_protection`](r/waf_template_graphql_protection)
+* [`fortiappseccloud_waf_template_http_header_security`](r/waf_template_http_header_security)
+* [`fortiappseccloud_waf_template_information_leakage`](r/waf_template_information_leakage)
+* [`fortiappseccloud_waf_template_ip_protection`](r/waf_template_ip_protection)
+* [`fortiappseccloud_waf_template_json_protection`](r/waf_template_json_protection)
+* [`fortiappseccloud_waf_template_known_attacks`](r/waf_template_known_attacks)
+* [`fortiappseccloud_waf_template_known_bots`](r/waf_template_known_bots)
+* [`fortiappseccloud_waf_template_mitb_protection`](r/waf_template_mitb_protection)
+* [`fortiappseccloud_waf_template_ml_api_protection`](r/waf_template_ml_api_protection)
+* [`fortiappseccloud_waf_template_ml_bot_detection`](r/waf_template_ml_bot_detection)
+* [`fortiappseccloud_waf_template_mobile_api_protection`](r/waf_template_mobile_api_protection)
+* [`fortiappseccloud_waf_template_parameter_validation`](r/waf_template_parameter_validation)
+* [`fortiappseccloud_waf_template_request_limits`](r/waf_template_request_limits)
+* [`fortiappseccloud_waf_template_rewriting_requests`](r/waf_template_rewriting_requests)
+* [`fortiappseccloud_waf_template_threshold_detection`](r/waf_template_threshold_detection)
+* [`fortiappseccloud_waf_template_url_access`](r/waf_template_url_access)
+* [`fortiappseccloud_waf_template_waiting_room`](r/waf_template_waiting_room)
+* [`fortiappseccloud_waf_template_web_socket_security`](r/waf_template_web_socket_security)
+* [`fortiappseccloud_waf_template_xml_protection_policy`](r/waf_template_xml_protection_policy)
 
 Typed template-module resources are always local (`template=false` on the wire) and import by `template_id`. Because the public module endpoints expose no `DELETE` operation, destroy preserves the complete response, applies the resource's reviewed disable statuses, PUTs it, and verifies the normalized GET before removing state. Template caching/compression requires its top-level, cache, and compression statuses to be false together.
 
 ## Data Sources
 
-* [`fortiappseccloud_waf_modules`](d/waf_modules.html) - Reads the complete app-level WAF module status inventory without changing module configuration.
-* [`fortiappseccloud_waf_signature_exception`](d/waf_signature_exception.html) - Reads the optional template ID exposed for one application/signature pair; it does not expose or manage exception rules.
+* [`fortiappseccloud_waf_modules`](d/waf_modules) - Reads the complete app-level WAF module status inventory without changing module configuration.
+* [`fortiappseccloud_waf_signature_exception`](d/waf_signature_exception) - Reads the optional template ID exposed for one application/signature pair; it does not expose or manage exception rules.
 
 ## Support
 

@@ -101,17 +101,29 @@ provider "fortiappseccloud" {
 }
 
 resource "fortiappseccloud_waf_app" "test" {
-  app_name        = "local-app"
-  domain_name     = "local.example.com"
-  services        = ["http", "https"]
-  http_port       = 80
-  https_port      = 443
-  extra_domains   = %s
-  platform        = "AWS"
-  region          = "us-east-1"
-  cdn             = false
-  block_mode      = %t
-  certificate_mode = "automatic"
+  app_name            = "local-app"
+  domain_name         = "local.example.com"
+  services            = ["http", "https"]
+  http_port           = 80
+  https_port          = 443
+  extra_domains       = %s
+  platform            = "AWS"
+  region              = "us-east-1"
+  cdn                 = false
+  block_mode          = %t
+  certificate_mode    = "automatic"
+  http2_status        = true
+  ipv6_option         = false
+  cert_challenge_mode = "dns"
+  block_url           = "PredefinedMsg"
+
+  ssl_options {
+    encryption_level     = "mozilla_intermediate"
+    http_2_https         = true
+    hsts_header          = true
+    hsts_max_age         = 31536000
+    internal_cookie_secure = true
+  }
 
   initial_origin {
     address  = "192.0.2.10"
@@ -123,12 +135,17 @@ resource "fortiappseccloud_waf_app" "test" {
 }
 
 type localApplicationMock struct {
-	mu           sync.Mutex
-	exists       bool
-	blockMode    int
-	extraDomains []string
-	certType     int
-	createCalls  int
+	mu               sync.Mutex
+	exists           bool
+	blockMode        int
+	extraDomains     []string
+	certType         int
+	http2Status      int
+	ipv6Option       int
+	certChallengeInt int
+	blockURL         string
+	sslOptions       map[string]any
+	createCalls      int
 }
 
 func (m *localApplicationMock) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -168,19 +185,38 @@ func (m *localApplicationMock) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			http.NotFound(w, r)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"extra_domains": m.extraDomains, "http_status": 1, "https_status": 1, "custom_port": map[string]int{"http": 80, "https": 443}, "cert_type": m.certType})
+		endpoint := map[string]any{"extra_domains": m.extraDomains, "http_status": 1, "https_status": 1, "custom_port": map[string]int{"http": 80, "https": 443}, "cert_type": m.certType, "http2_status": m.http2Status, "ipv6_option": m.ipv6Option, "cert_challenge_mode": m.certChallengeInt, "block_url": m.blockURL, "preserve": "remote-only-value"}
+		if m.sslOptions != nil {
+			endpoint["ssl_options"] = m.sslOptions
+		}
+		_ = json.NewEncoder(w).Encode(endpoint)
 	case "PUT /v2/waf/apps/100/endpoint":
 		var document map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&document); err != nil {
 			http.Error(w, "invalid endpoint document", http.StatusBadRequest)
 			return
 		}
-		m.extraDomains = nil
+		m.extraDomains = []string{}
 		for _, value := range document["extra_domains"].([]any) {
 			m.extraDomains = append(m.extraDomains, value.(string))
 		}
 		if certType, ok := document["cert_type"].(float64); ok {
 			m.certType = int(certType)
+		}
+		if http2, ok := document["http2_status"].(float64); ok {
+			m.http2Status = int(http2)
+		}
+		if ipv6, ok := document["ipv6_option"].(float64); ok {
+			m.ipv6Option = int(ipv6)
+		}
+		if mode, ok := document["cert_challenge_mode"].(float64); ok {
+			m.certChallengeInt = int(mode)
+		}
+		if blockURL, ok := document["block_url"].(string); ok {
+			m.blockURL = blockURL
+		}
+		if sslOptions, ok := document["ssl_options"].(map[string]any); ok {
+			m.sslOptions = sslOptions
 		}
 		w.WriteHeader(http.StatusNoContent)
 	case "PUT /v2/waf/apps/100/block":

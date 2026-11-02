@@ -20,7 +20,7 @@ func TestClassifyPublicWAFCoverage(t *testing.T) {
 			nonPublicCount++
 		}
 	}
-	if len(document.Operations) != 262 || publicCount != 256 || nonPublicCount != 6 {
+	if len(document.Operations) != 273 || publicCount != 267 || nonPublicCount != 6 {
 		t.Fatalf("operation counts = total:%d public:%d non-public:%d", len(document.Operations), publicCount, nonPublicCount)
 	}
 
@@ -73,12 +73,12 @@ func TestClassifyPublicWAFFamilyCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[EndpointFamily]int{
-		FamilyAppModule:       90,
-		FamilyTemplateModule:  66,
+		FamilyAppModule:       96,
+		FamilyTemplateModule:  68,
 		FamilyCoreCRUD:        11,
-		FamilyAppGetOnly:      29,
+		FamilyAppGetOnly:      30,
 		FamilyAppPutOnly:      9,
-		FamilyNestedAppGetPut: 4,
+		FamilyNestedAppGetPut: 6,
 		FamilyAppPost:         4,
 		FamilyBlockedIP:       2,
 		FamilyMisc:            4,
@@ -102,11 +102,11 @@ func TestClassifyPublicWAFCoverageCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[CoverageStatus]int{
-		CoverageLiveVerified:       141,
+		CoverageLiveVerified:       145,
 		CoverageLocallyImplemented: 6,
 		CoveragePlanned:            35,
 		CoverageDeferred:           4,
-		CoverageExcluded:           70,
+		CoverageExcluded:           77,
 	}
 	got := make(map[CoverageStatus]int)
 	for _, classification := range classifications {
@@ -122,8 +122,8 @@ func TestClassifyPublicWAFAppModulePartition(t *testing.T) {
 
 	wantGeneratedPlanned := []string{}
 	wantCustom := []string{
-		"anomaly_detection", "ca_certificate", "cors_protection", "crl_certificate",
-		"custom_rule", "endpoint", "global_trust_list_parameter",
+		"anomaly_detection", "ca_certificate", "cert_proxy", "cors_protection",
+		"crl_certificate", "custom_rule", "dns_resolve", "endpoint", "global_trust_list_parameter",
 		"inter_certificate", "ip_protection",
 		"log_settings", "ml_api_protection", "modules", "routings", "server_ca",
 		"server_crl", "servers", "signature_exception", "sni_certificate",
@@ -151,9 +151,9 @@ func TestClassifyPublicWAFAppModulePartition(t *testing.T) {
 
 	all := unionSets(handWrittenAppModules, generatedAppModules, frameworkCustomImplementedAppModules,
 		selectedNextAppModules, generatedPlannedAppModules, custom)
-	if len(all) != 45 || len(handWrittenAppModules) != 1 || len(generatedAppModules) != 25 ||
+	if len(all) != 48 || len(handWrittenAppModules) != 1 || len(generatedAppModules) != 26 ||
 		len(frameworkCustomImplementedAppModules) != 1 || len(selectedNextAppModules) != 0 ||
-		len(generatedPlannedAppModules) != 0 || len(custom) != 18 {
+		len(generatedPlannedAppModules) != 0 || len(custom) != 20 {
 		t.Fatalf("app module set sizes = all:%d handwritten:%d generated:%d framework-custom:%d selected:%d planned:%d custom:%d",
 			len(all), len(handWrittenAppModules), len(generatedAppModules), len(frameworkCustomImplementedAppModules),
 			len(selectedNextAppModules), len(generatedPlannedAppModules), len(custom))
@@ -178,6 +178,11 @@ func TestClassifyPublicWAFAppModulePartition(t *testing.T) {
 		case "csrf_protection":
 			if classification.Mode != ModeGenerated || classification.Coverage != CoverageLiveVerified {
 				t.Errorf("CSRF classification = %#v", classification)
+			}
+		case "acceleration":
+			if classification.Mode != ModeGenerated || classification.Coverage != CoverageLiveVerified ||
+				classification.ClientMethod != map[string]string{"GET": "GetWAFModule", "PUT": "PutWAFModule"}[classification.Method] {
+				t.Errorf("acceleration classification = %#v", classification)
 			}
 		case "url_access":
 			if classification.Mode != ModeGenerated || classification.Coverage != CoverageLiveVerified ||
@@ -232,7 +237,7 @@ func TestClassifyPublicWAFAppModulePartition(t *testing.T) {
 				t.Errorf("ml api protection classification = %#v", classification)
 			}
 		case "log_settings", "inter_certificate", "sni_certificate",
-			"server_ca", "server_crl", "ca_certificate", "crl_certificate":
+			"server_ca", "server_crl", "ca_certificate", "crl_certificate", "cert_proxy":
 			if classification.Disposition != DispositionExplicitExclusion ||
 				classification.Mode != ModeNone ||
 				classification.Coverage != CoverageExcluded ||
@@ -290,8 +295,8 @@ func TestClassifyPublicWAFAppModulePartition(t *testing.T) {
 			}
 		}
 	}
-	if len(methodsByModule) != 45 {
-		t.Fatalf("classified app modules = %d, want 45", len(methodsByModule))
+	if len(methodsByModule) != 48 {
+		t.Fatalf("classified app modules = %d, want 48", len(methodsByModule))
 	}
 	for module, methods := range methodsByModule {
 		sort.Strings(methods)

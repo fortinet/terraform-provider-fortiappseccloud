@@ -24,11 +24,11 @@ func TestPinnedWAFContract(t *testing.T) {
 	if document.SHA256 != BaselineSHA256 {
 		t.Fatalf("SHA-256 = %q, want %q", document.SHA256, BaselineSHA256)
 	}
-	if document.PathCount != 155 {
-		t.Fatalf("WAF path count = %d, want 155", document.PathCount)
+	if document.PathCount != 162 {
+		t.Fatalf("WAF path count = %d, want 162", document.PathCount)
 	}
-	if len(document.Operations) != 262 {
-		t.Fatalf("WAF operation count = %d, want 262", len(document.Operations))
+	if len(document.Operations) != 273 {
+		t.Fatalf("WAF operation count = %d, want 273", len(document.Operations))
 	}
 	if _, ok := document.Find("GET", "/general/asset_groups/{group_uuid}"); ok {
 		t.Fatal("out-of-scope asset-group operation leaked into the WAF generator contract")

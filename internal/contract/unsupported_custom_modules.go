@@ -71,6 +71,22 @@ var reviewedUnsupportedCustomModuleContracts = []UnsupportedCustomModuleContract
 		Reason:           "client-authentication CRL content upload is outside the provider goal",
 		ScopeDecision:    "do not serve a client-authentication CRL resource",
 	},
+	{
+		Module: "dns_resolve", TerraformName: "fortiappseccloud_waf_dns_resolve",
+		PublicPath:       "/waf/apps/{ep_id}/dns_resolve",
+		SecretFields:     nil,
+		ReviewedEvidence: "the pinned OpenAPI 26.4 exposes the app-scoped dns_resolve GET/PUT pair",
+		Reason:           "the API owner has not requested Terraform support for DNS resolve settings yet",
+		ScopeDecision:    "do not serve a dns_resolve resource until the owner requests it",
+	},
+	{
+		Module: "cert_proxy", TerraformName: "fortiappseccloud_waf_cert_proxy",
+		PublicPath:       "/waf/apps/{ep_id}/cert_proxy",
+		SecretFields:     []string{"certificate", "private_key", "passwd"},
+		ReviewedEvidence: "the typed action API accepts CA certificate, private-key, and optional password content with an import/delete action shape while GET returns a paginated numeric-ID certificate list",
+		Reason:           "origin-server CA certificate content upload is outside the provider goal",
+		ScopeDecision:    "do not serve an origin-server certificate-proxy upload resource",
+	},
 }
 
 // ReviewedUnsupportedCustomModuleContracts returns a deep copy of the

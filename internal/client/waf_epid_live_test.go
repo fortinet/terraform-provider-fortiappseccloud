@@ -35,7 +35,7 @@ func TestLiveEPIDFilterLifecycle(t *testing.T) {
 	region := os.Getenv("FORTIAPPSECCLOUD_ACC_REGION")
 	for name, val := range map[string]string{
 		"FORTIAPPSECCLOUD_HOSTNAME":           hostname,
-		"FORTIAPPSECCLOUD_API_TOKEN":           apiToken,
+		"FORTIAPPSECCLOUD_API_TOKEN":          apiToken,
 		"FORTIAPPSECCLOUD_ACC_APP_NAME":       appName,
 		"FORTIAPPSECCLOUD_ACC_DOMAIN":         domain,
 		"FORTIAPPSECCLOUD_ACC_ORIGIN_ADDRESS": originAddr,
@@ -76,7 +76,7 @@ func TestLiveEPIDFilterLifecycle(t *testing.T) {
 		ServerAddress:  originAddr,
 		ServerType:     "https",
 		ServerPort:     443,
-		CDNStatus:       0,
+		CDNStatus:      0,
 		IsGlobalCDN:    0,
 		Region:         region,
 		Platform:       platform,

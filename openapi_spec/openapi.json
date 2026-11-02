@@ -416,6 +416,116 @@
         },
         "type": "object"
       },
+      "Acceleration": {
+        "properties": {
+          "css_minify": {
+            "default": false,
+            "description": "Minify CSS responses.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "exception_list": {
+            "description": "List of acceleration exceptions. Max 256 per application.",
+            "items": {
+              "$ref": "#/components/schemas/AccelerationException"
+            },
+            "maxItems": 256,
+            "type": "array"
+          },
+          "html_combine_heads": {
+            "default": false,
+            "description": "Combine HTML head elements.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "html_css2head": {
+            "default": false,
+            "description": "Move CSS to the HTML head.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "html_minify": {
+            "default": false,
+            "description": "Minify HTML responses.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "js_minify": {
+            "default": false,
+            "description": "Minify JavaScript responses.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "status": {
+            "default": false,
+            "description": "Enable the Web Content Acceleration module.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "AccelerationException": {
+        "properties": {
+          "host": {
+            "description": "Host to match. Max 255 characters.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "host_status": {
+            "default": false,
+            "description": "Whether to match the host field.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "idx": {
+            "default": 0,
+            "description": "Exception ID (start from 1).",
+            "type": "integer"
+          },
+          "url_pattern": {
+            "description": "URL pattern to match. Max 255 characters.",
+            "maxLength": 255,
+            "type": "string"
+          },
+          "url_type": {
+            "default": "string",
+            "description": "URL pattern type.",
+            "enum": [
+              "string",
+              "regex"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "host_status",
+          "url_pattern",
+          "url_type"
+        ],
+        "type": "object"
+      },
       "AccountManyRes": {
         "properties": {
           "metadata": {
@@ -1096,10 +1206,6 @@
       },
       "ApplicationEndpoint": {
         "properties": {
-          "app_name": {
-            "description": "The application name.",
-            "type": "string"
-          },
           "block_mode": {
             "description": "Block mode (0/1).",
             "enum": [
@@ -2968,6 +3074,27 @@
         ],
         "type": "object"
       },
+      "CertListScehma": {
+        "properties": {
+          "expired": {
+            "description": "The CA certificate expiration time.",
+            "type": "string"
+          },
+          "id": {
+            "description": "The CA certificate index.",
+            "type": "integer"
+          },
+          "issued_by": {
+            "description": "The CA certificate issuer.",
+            "type": "string"
+          },
+          "issued_to": {
+            "description": "The CA certificate subject.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "CloneMessage": {
         "properties": {
           "from_name": {
@@ -3017,6 +3144,9 @@
             "properties": {},
             "type": "array"
           },
+          "custom_port": {
+            "$ref": "#/components/schemas/CustomPort"
+          },
           "domains": {
             "example": [
               "example.com",
@@ -3043,13 +3173,8 @@
             "properties": {},
             "type": "string"
           },
-          "protocols": {
-            "format": "[]model.Protocol",
-            "items": {
-              "$ref": "#/components/schemas/Protocol"
-            },
-            "properties": {},
-            "type": "array"
+          "service": {
+            "$ref": "#/components/schemas/Service"
           }
         },
         "type": "object"
@@ -4154,7 +4279,7 @@
           },
           "reverse_match": {
             "default": false,
-            "description": "Indicate how to use 'ip', 'username' and 'url' when determining whether this rule’s condition has been met or not. This field depends on type 'source-ip-filter', 'user-filter' and 'url-filter'",
+            "description": "Indicate how to use 'ip', 'username' and 'url' when determining whether this rule\u2019s condition has been met or not. This field depends on type 'source-ip-filter', 'user-filter' and 'url-filter'",
             "enum": [
               true,
               false
@@ -6129,6 +6254,14 @@
         },
         "type": "object"
       },
+      "GetAcceleration": {
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/PutAcceleration"
+          }
+        },
+        "type": "object"
+      },
       "GetAccountTakeover": {
         "properties": {
           "result": {
@@ -6189,6 +6322,29 @@
         "properties": {
           "result": {
             "$ref": "#/components/schemas/PutCachingAndCompression"
+          }
+        },
+        "type": "object"
+      },
+      "GetCert": {
+        "properties": {
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/CertListScehma"
+            },
+            "type": "array"
+          },
+          "next_cursor": {
+            "description": "The next cursor.",
+            "type": "string"
+          },
+          "prev_cursor": {
+            "description": "The previous cursor.",
+            "type": "string"
+          },
+          "total": {
+            "description": "The total number of CA certificates.",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -7563,7 +7719,7 @@
             "type": "integer"
           },
           "ip": {
-            "description": "The client’s source IP address. It can be a single IP or a range of addresses (e.g., 172.22.14.1-172.22.14.256 or 10:200::10:1-10:200:10:100)",
+            "description": "The client\u2019s source IP address. It can be a single IP or a range of addresses (e.g., 172.22.14.1-172.22.14.256 or 10:200::10:1-10:200:10:100)",
             "type": "string"
           },
           "type": {
@@ -7585,7 +7741,7 @@
       "IPRulePut": {
         "properties": {
           "ip": {
-            "description": "The client’s source IP address. It can be a single IP or a range of addresses (e.g., 172.22.14.1-172.22.14.256 or 10:200::10:1-10:200:10:100)",
+            "description": "The client\u2019s source IP address. It can be a single IP or a range of addresses (e.g., 172.22.14.1-172.22.14.256 or 10:200::10:1-10:200:10:100)",
             "type": "string"
           },
           "type": {
@@ -7919,13 +8075,13 @@
           },
           "max_len": {
             "default": 0,
-            "description": "The maximum length of the string that is the input’s value. To disable the length limit, type 0",
+            "description": "The maximum length of the string that is the input\u2019s value. To disable the length limit, type 0",
             "maximum": 1024,
             "minimum": 0,
             "type": "integer"
           },
           "name": {
-            "description": "A regular expression that matches the name attribute of the parameter’s input tag",
+            "description": "A regular expression that matches the name attribute of the parameter\u2019s input tag",
             "maxLength": 63,
             "type": "string"
           },
@@ -8922,186 +9078,8 @@
         },
         "type": "object"
       },
-      "LicenseUsageDetail": {
-        "properties": {
-          "account_id": {
-            "description": "account id",
-            "example": 12345,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "account_name": {
-            "description": "account name",
-            "example": "My Account",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "capacity": {
-            "description": "capacity",
-            "example": 1000,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "children": {
-            "description": "children",
-            "format": "[]v1.LicenseUsageDetailChildren",
-            "items": {
-              "$ref": "#/components/schemas/LicenseUsageDetailChildren"
-            },
-            "properties": {},
-            "type": "array"
-          },
-          "display_text": {
-            "description": "display text: serial number",
-            "example": "SN123456789",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "idx": {
-            "description": "index",
-            "example": 1,
-            "format": "int",
-            "properties": {},
-            "type": "integer"
-          },
-          "usage": {
-            "description": "usage",
-            "example": 500,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageDetailChildren": {
-        "properties": {
-          "account_id": {
-            "description": "account id",
-            "example": 12345,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "account_name": {
-            "description": "account name",
-            "example": "My Account",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "display_text": {
-            "description": "display text: application alias name",
-            "example": "My Application",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "ent_id": {
-            "description": "enterprise id",
-            "example": "ent_12345",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "idx": {
-            "description": "index",
-            "example": 1,
-            "format": "int",
-            "properties": {},
-            "type": "integer"
-          },
-          "usage": {
-            "description": "usage",
-            "example": 250,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageDetailRes": {
-        "properties": {
-          "records": {
-            "description": "detail usage log",
-            "format": "[]v1.UsageLogDetail",
-            "items": {
-              "$ref": "#/components/schemas/UsageLogDetail"
-            },
-            "properties": {},
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageDetailRes_GoFrameResponse": {
-        "properties": {
-          "code": {
-            "description": "response status code, 0 means success",
-            "example": 0,
-            "format": "int32",
-            "type": "integer"
-          },
-          "data": {
-            "$ref": "#/components/schemas/LicenseUsageDetailRes",
-            "description": "response payload"
-          },
-          "message": {
-            "description": "response message, empty on success",
-            "example": "",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageRes": {
-        "properties": {
-          "records": {
-            "description": "usage log",
-            "format": "[]v1.UsageLog",
-            "items": {
-              "$ref": "#/components/schemas/UsageLog"
-            },
-            "properties": {},
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageRes_GoFrameResponse": {
-        "properties": {
-          "code": {
-            "description": "response status code, 0 means success",
-            "example": 0,
-            "format": "int32",
-            "type": "integer"
-          },
-          "data": {
-            "$ref": "#/components/schemas/LicenseUsageRes",
-            "description": "response payload"
-          },
-          "message": {
-            "description": "response message, empty on success",
-            "example": "",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "LicenseUsageSummaryRes": {
         "properties": {
-          "capacity": {
-            "description": "total capacity",
-            "example": 1000,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
           "expires": {
             "description": "latest license expiration date",
             "example": "2024-01-01",
@@ -9129,40 +9107,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/LicenseUsageSummaryRes",
-            "description": "response payload"
-          },
-          "message": {
-            "description": "response message, empty on success",
-            "example": "",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageViewRes": {
-        "properties": {
-          "records": {
-            "description": "usage log",
-            "format": "[]v1.UsageLogView",
-            "items": {
-              "$ref": "#/components/schemas/UsageLogView"
-            },
-            "properties": {},
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "LicenseUsageViewRes_GoFrameResponse": {
-        "properties": {
-          "code": {
-            "description": "response status code, 0 means success",
-            "example": 0,
-            "format": "int32",
-            "type": "integer"
-          },
-          "data": {
-            "$ref": "#/components/schemas/LicenseUsageViewRes",
             "description": "response payload"
           },
           "message": {
@@ -11009,6 +10953,26 @@
         ],
         "type": "object"
       },
+      "PutAcceleration": {
+        "properties": {
+          "configs": {
+            "$ref": "#/components/schemas/Acceleration"
+          },
+          "template": {
+            "description": "Enable to inherit configuration from template.",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "configs",
+          "template"
+        ],
+        "type": "object"
+      },
       "PutAccountTakeover": {
         "properties": {
           "configs": {
@@ -11168,6 +11132,44 @@
           "configs",
           "template"
         ],
+        "type": "object"
+      },
+      "PutCert": {
+        "properties": {
+          "action": {
+            "description": "The action to operate a certificate.",
+            "enum": [
+              "import",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "certificate": {
+            "description": "The CA certificate (for action \"import\").",
+            "type": "string"
+          },
+          "id": {
+            "description": "The CA certificate index (for action \"delete\").",
+            "type": "integer"
+          },
+          "passwd": {
+            "description": "The optional password of CA certificate (for action \"import\").",
+            "type": "string"
+          },
+          "pool_name": {
+            "default": "default_pool",
+            "description": "The server pool name.",
+            "type": "string"
+          },
+          "private_key": {
+            "description": "The private key of CA certificate (for action \"import\").",
+            "type": "string"
+          },
+          "server_index": {
+            "description": "The origin server index.",
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "PutContentRoutingRequest": {
@@ -13133,6 +13135,14 @@
             "maxLength": 128,
             "type": "string"
           },
+          "output_format": {
+            "description": "Output format of exported files: json_lines (one JSON object per line) or json_array (all events wrapped in a single JSON array, Vector default). Defaults to json_array when omitted.",
+            "enum": [
+              "json_lines",
+              "json_array"
+            ],
+            "type": "string"
+          },
           "prefix": {
             "maxLength": 512,
             "type": "string"
@@ -13210,6 +13220,9 @@
           "name": {
             "type": "string"
           },
+          "output_format": {
+            "type": "string"
+          },
           "prefix": {
             "nullable": true,
             "type": "string"
@@ -13266,6 +13279,9 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "output_format": {
             "type": "string"
           },
           "rule_id": {
@@ -13328,6 +13344,14 @@
           },
           "name": {
             "maxLength": 128,
+            "type": "string"
+          },
+          "output_format": {
+            "description": "Output format of exported files: json_lines (one JSON object per line) or json_array (all events wrapped in a single JSON array, Vector default). Defaults to json_array when omitted.",
+            "enum": [
+              "json_lines",
+              "json_array"
+            ],
             "type": "string"
           },
           "prefix": {
@@ -13465,6 +13489,14 @@
           "backup": {
             "default": false,
             "description": "Enable/Disable backup",
+            "enum": [
+              true,
+              false
+            ],
+            "type": "boolean"
+          },
+          "cert_proxy": {
+            "description": "Enable/Disable the client certificate proxy, only available on ssl True",
             "enum": [
               true,
               false
@@ -13978,7 +14010,10 @@
             "type": "string"
           },
           "feedback": {
-            "description": "(BOOL) feedback",
+            "description": "(BOOL) feedback, can only be true",
+            "enum": [
+              "true"
+            ],
             "example": true,
             "format": "bool",
             "properties": {},
@@ -14722,7 +14757,7 @@
       "SslOptions1": {
         "properties": {
           "encryption_level": {
-            "description": "Encryption level.",
+            "description": "Encryption level. Recomputes the enabled TLS versions: mozilla_modern enables TLS 1.3 only, mozilla_intermediate enables TLS 1.2/1.3, mozilla_old enables TLS 1.1/1.2/1.3.",
             "enum": [
               "mozilla_modern",
               "mozilla_intermediate",
@@ -14739,7 +14774,9 @@
             "type": "integer"
           },
           "hsts_max_age": {
-            "description": "HSTS max-age in seconds.",
+            "description": "HSTS max-age in seconds. Range 3600-31536000.",
+            "maximum": 31536000,
+            "minimum": 3600,
             "type": "integer"
           },
           "hsts_preload": {
@@ -14759,7 +14796,7 @@
             "type": "integer"
           },
           "http_2_https": {
-            "description": "Redirect HTTP to HTTPS (0/1). Only with default ports.",
+            "description": "Redirect HTTP to HTTPS (0/1). Only allowed when both HTTP/HTTPS services are enabled and custom ports remain the 80/443 defaults.",
             "enum": [
               0,
               1
@@ -14804,7 +14841,7 @@
             "type": "array"
           },
           "tls_1_1": {
-            "description": "Enable TLS 1.1 (0/1).",
+            "description": "Enable TLS 1.1 (0/1). Forced to 0 when http2_status is enabled or when encryption_level selects mozilla_modern/mozilla_intermediate.",
             "enum": [
               0,
               1
@@ -14812,7 +14849,7 @@
             "type": "integer"
           },
           "tls_1_2": {
-            "description": "Enable TLS 1.2 (0/1).",
+            "description": "Enable TLS 1.2 (0/1). Overridden when encryption_level is mozilla_modern (0) or mozilla_intermediate/mozilla_old (1).",
             "enum": [
               0,
               1
@@ -14820,7 +14857,7 @@
             "type": "integer"
           },
           "tls_1_3": {
-            "description": "Enable TLS 1.3 (0/1).",
+            "description": "Enable TLS 1.3 (0/1). Overridden when encryption_level is mozilla_modern or mozilla_intermediate (1) or mozilla_old (1).",
             "enum": [
               0,
               1
@@ -14854,7 +14891,7 @@
             "type": "array"
           },
           "encryption_level": {
-            "description": "Encryption level: 'medium', 'high' or 'customized'.",
+            "description": "Encryption level. Returns the same values accepted on update: 'mozilla_modern', 'mozilla_intermediate', or 'mozilla_old'.",
             "type": "string"
           },
           "hsts_header": {
@@ -15866,149 +15903,6 @@
             "maxLength": 127,
             "pattern": "^/.*$",
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "UsageLog": {
-        "properties": {
-          "account_id": {
-            "description": "account id",
-            "example": 12345,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "capacity": {
-            "description": "total capacity",
-            "example": 1000,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "timestamp": {
-            "description": "timestamp in unix seconds",
-            "example": 1714550400,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "total_percentage": {
-            "description": "total percentage",
-            "example": 50,
-            "format": "float32",
-            "properties": {},
-            "type": "number"
-          },
-          "total_usage": {
-            "description": "total usage",
-            "example": 500,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "usage_rank": {
-            "description": "usage_rank",
-            "format": "[]model.UsageRank",
-            "items": {
-              "$ref": "#/components/schemas/UsageRank"
-            },
-            "properties": {},
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "UsageLogDetail": {
-        "properties": {
-          "license_usage": {
-            "description": "license usage",
-            "format": "[]v1.LicenseUsageDetail",
-            "items": {
-              "$ref": "#/components/schemas/LicenseUsageDetail"
-            },
-            "properties": {},
-            "type": "array"
-          },
-          "timestamp": {
-            "description": "timestamp in unix seconds",
-            "example": 1714550400,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "UsageLogView": {
-        "properties": {
-          "account_id": {
-            "description": "account id",
-            "example": 12345,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "capacity": {
-            "description": "total capacity",
-            "example": 1000,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "timestamp": {
-            "description": "timestamp in unix seconds",
-            "example": 1714550400,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          },
-          "total_usage": {
-            "description": "total usage",
-            "example": 500,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "UsageRank": {
-        "properties": {
-          "app_name": {
-            "description": "application alias name",
-            "example": "My Application",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "ent_id": {
-            "description": "enterprise id",
-            "example": "ent_12345",
-            "format": "string",
-            "properties": {},
-            "type": "string"
-          },
-          "percentage": {
-            "description": "usage/total usage",
-            "example": 50,
-            "format": "float32",
-            "properties": {},
-            "type": "number"
-          },
-          "rank": {
-            "description": "rank",
-            "example": 1,
-            "format": "int",
-            "properties": {},
-            "type": "integer"
-          },
-          "usage": {
-            "description": "usage",
-            "example": 250,
-            "format": "int64",
-            "properties": {},
-            "type": "integer"
           }
         },
         "type": "object"
@@ -17617,6 +17511,13 @@
           "azure_tenant_id": {
             "type": "string"
           },
+          "cloud_auth_key_version": {
+            "example": "0",
+            "type": "string"
+          },
+          "server_auth_dek": {
+            "type": "string"
+          },
           "server_id": {
             "example": "0",
             "type": "string"
@@ -17756,6 +17657,13 @@
             "type": "string"
           },
           "conf_not_permit": {
+            "example": "0",
+            "type": "string"
+          },
+          "health_check_auth_dek": {
+            "type": "string"
+          },
+          "health_check_auth_key_version": {
             "example": "0",
             "type": "string"
           },
@@ -18212,6 +18120,13 @@
             "type": "array"
           },
           "server_api_ver": {
+            "type": "string"
+          },
+          "server_auth_dek": {
+            "type": "string"
+          },
+          "server_auth_key_version": {
+            "example": "0",
             "type": "string"
           },
           "server_authkey": {
@@ -19254,7 +19169,7 @@
     },
     "termsOfService": "https://www.fortinet.com/corporate/about-us/legal",
     "title": "FortiAppSec Cloud RESTful API Reference",
-    "version": "26.3.a"
+    "version": "26.4"
   },
   "openapi": "3.0.1",
   "paths": {
@@ -23006,7 +22921,7 @@
                     "value": {
                       "code": 0,
                       "data": {
-                        "metadata": {},
+                        "metadata": null,
                         "page_info": {
                           "curr_data_size": 100,
                           "curr_page_num": 1,
@@ -23018,7 +22933,7 @@
                           {
                             "category": "authentication",
                             "comment": "Reviewed signal",
-                            "content": null,
+                            "content": {},
                             "created_at": 1714550400,
                             "description": "Signal for login anomaly detection",
                             "domain": "example.com",
@@ -23236,7 +23151,13 @@
                     "type": "string"
                   },
                   "feedback": {
+                    "description": "(BOOL) feedback, can only be true",
+                    "enum": [
+                      "true"
+                    ],
                     "example": true,
+                    "format": "bool",
+                    "properties": {},
                     "type": "boolean"
                   }
                 },
@@ -23728,419 +23649,6 @@
       },
       "summary": "Get Enterprises and Ownership of an User"
     },
-    "/abp/portal/basic/users/license-usage": {
-      "get": {
-        "parameters": [
-          {
-            "description": "The number of top enterprises to return, ranked by usage.",
-            "example": "5",
-            "in": "query",
-            "name": "topn",
-            "schema": {
-              "default": 5,
-              "description": "The number of top enterprises to return, ranked by usage.",
-              "example": "5",
-              "format": "int",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "start timestamp in unix seconds",
-            "example": "1714550400",
-            "in": "query",
-            "name": "start",
-            "schema": {
-              "description": "start timestamp in unix seconds",
-              "example": "1714550400",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "end timestamp in unix seconds",
-            "example": "1714636800",
-            "in": "query",
-            "name": "end",
-            "schema": {
-              "description": "end timestamp in unix seconds",
-              "example": "1714636800",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "enterprise id",
-            "example": "ent_12345",
-            "in": "query",
-            "name": "ent_id",
-            "schema": {
-              "description": "enterprise id",
-              "example": "ent_12345",
-              "format": "string",
-              "properties": {},
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "0-success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "code": 0,
-                      "data": {
-                        "records": [
-                          {
-                            "account_id": 12345,
-                            "capacity": 1000,
-                            "timestamp": 1714550400,
-                            "total_percentage": 50,
-                            "total_usage": 500,
-                            "usage_rank": [
-                              {
-                                "app_name": "My Application",
-                                "ent_id": "ent_12345",
-                                "percentage": 50,
-                                "rank": 1,
-                                "usage": 250
-                              }
-                            ]
-                          }
-                        ]
-                      },
-                      "message": ""
-                    }
-                  },
-                  "1-error-50": {
-                    "summary": "Internal error (code=50)",
-                    "value": {
-                      "code": 50,
-                      "data": null,
-                      "message": "Internal Error"
-                    }
-                  },
-                  "2-error-51": {
-                    "summary": "Validation failed (code=51)",
-                    "value": {
-                      "code": 51,
-                      "data": null,
-                      "message": "Validation Failed"
-                    }
-                  },
-                  "3-error-53": {
-                    "summary": "Invalid parameter (code=53)",
-                    "value": {
-                      "code": 53,
-                      "data": null,
-                      "message": "Invalid Parameter"
-                    }
-                  },
-                  "4-error-54": {
-                    "summary": "Missing parameter (code=54)",
-                    "value": {
-                      "code": 54,
-                      "data": null,
-                      "message": "Missing Parameter"
-                    }
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseUsageRes_GoFrameResponse"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "ApiRequestAuthorizer": []
-          }
-        ],
-        "summary": "Get Top Enterprises by Usage",
-        "tags": [
-          "Usage (ABP)"
-        ]
-      },
-      "summary": "Get Top Enterprises by Usage"
-    },
-    "/abp/portal/basic/users/license-usage-detail": {
-      "get": {
-        "parameters": [
-          {
-            "description": "start timestamp in unix seconds",
-            "example": "1714550400",
-            "in": "query",
-            "name": "start",
-            "schema": {
-              "description": "start timestamp in unix seconds",
-              "example": "1714550400",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "end timestamp in unix seconds",
-            "example": "1714636800",
-            "in": "query",
-            "name": "end",
-            "schema": {
-              "description": "end timestamp in unix seconds",
-              "example": "1714636800",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "enterprise id",
-            "example": "ent_12345",
-            "in": "query",
-            "name": "ent_id",
-            "schema": {
-              "description": "enterprise id",
-              "example": "ent_12345",
-              "format": "string",
-              "properties": {},
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "0-success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "code": 0,
-                      "data": {
-                        "records": [
-                          {
-                            "license_usage": [
-                              {
-                                "account_id": 12345,
-                                "account_name": "My Account",
-                                "capacity": 1000,
-                                "children": [
-                                  {
-                                    "account_id": 12345,
-                                    "account_name": "My Account",
-                                    "display_text": "My Application",
-                                    "ent_id": "ent_12345",
-                                    "idx": 1,
-                                    "usage": 250
-                                  }
-                                ],
-                                "display_text": "SN123456789",
-                                "idx": 1,
-                                "usage": 500
-                              }
-                            ],
-                            "timestamp": 1714550400
-                          }
-                        ]
-                      },
-                      "message": ""
-                    }
-                  },
-                  "1-error-50": {
-                    "summary": "Internal error (code=50)",
-                    "value": {
-                      "code": 50,
-                      "data": null,
-                      "message": "Internal Error"
-                    }
-                  },
-                  "2-error-51": {
-                    "summary": "Validation failed (code=51)",
-                    "value": {
-                      "code": 51,
-                      "data": null,
-                      "message": "Validation Failed"
-                    }
-                  },
-                  "3-error-53": {
-                    "summary": "Invalid parameter (code=53)",
-                    "value": {
-                      "code": 53,
-                      "data": null,
-                      "message": "Invalid Parameter"
-                    }
-                  },
-                  "4-error-54": {
-                    "summary": "Missing parameter (code=54)",
-                    "value": {
-                      "code": 54,
-                      "data": null,
-                      "message": "Missing Parameter"
-                    }
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseUsageDetailRes_GoFrameResponse"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "ApiRequestAuthorizer": []
-          }
-        ],
-        "summary": "Get Detailed License Usage",
-        "tags": [
-          "Usage (ABP)"
-        ]
-      },
-      "summary": "Get Detailed License Usage"
-    },
-    "/abp/portal/basic/users/license-usage-general": {
-      "get": {
-        "parameters": [
-          {
-            "description": "start timestamp in unix seconds",
-            "example": "1714550400",
-            "in": "query",
-            "name": "start",
-            "schema": {
-              "description": "start timestamp in unix seconds",
-              "example": "1714550400",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "end timestamp in unix seconds",
-            "example": "1714636800",
-            "in": "query",
-            "name": "end",
-            "schema": {
-              "description": "end timestamp in unix seconds",
-              "example": "1714636800",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "enterprise id",
-            "example": "ent_12345",
-            "in": "query",
-            "name": "ent_id",
-            "schema": {
-              "description": "enterprise id",
-              "example": "ent_12345",
-              "format": "string",
-              "properties": {},
-              "type": "string"
-            }
-          },
-          {
-            "description": "query type: month, day",
-            "example": "month",
-            "in": "query",
-            "name": "type",
-            "schema": {
-              "default": "month",
-              "description": "query type: month, day",
-              "enum": [
-                "month",
-                "day"
-              ],
-              "example": "month",
-              "format": "string",
-              "properties": {},
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "0-success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "code": 0,
-                      "data": {
-                        "records": [
-                          {
-                            "account_id": 12345,
-                            "capacity": 1000,
-                            "timestamp": 1714550400,
-                            "total_usage": 500
-                          }
-                        ]
-                      },
-                      "message": ""
-                    }
-                  },
-                  "1-error-50": {
-                    "summary": "Internal error (code=50)",
-                    "value": {
-                      "code": 50,
-                      "data": null,
-                      "message": "Internal Error"
-                    }
-                  },
-                  "2-error-51": {
-                    "summary": "Validation failed (code=51)",
-                    "value": {
-                      "code": 51,
-                      "data": null,
-                      "message": "Validation Failed"
-                    }
-                  },
-                  "3-error-53": {
-                    "summary": "Invalid parameter (code=53)",
-                    "value": {
-                      "code": 53,
-                      "data": null,
-                      "message": "Invalid Parameter"
-                    }
-                  },
-                  "4-error-54": {
-                    "summary": "Missing parameter (code=54)",
-                    "value": {
-                      "code": 54,
-                      "data": null,
-                      "message": "Missing Parameter"
-                    }
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseUsageViewRes_GoFrameResponse"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "ApiRequestAuthorizer": []
-          }
-        ],
-        "summary": "Get General FortiAppSec License Usage",
-        "tags": [
-          "Usage (ABP)"
-        ]
-      },
-      "summary": "Get General FortiAppSec License Usage"
-    },
     "/abp/portal/basic/users/license-usage-sum": {
       "get": {
         "parameters": [
@@ -24181,7 +23689,6 @@
                     "value": {
                       "code": 0,
                       "data": {
-                        "capacity": 1000,
                         "expires": "2024-01-01",
                         "usage": 500
                       },
@@ -24240,142 +23747,6 @@
         ]
       },
       "summary": "Get Account License Usage Summary"
-    },
-    "/abp/portal/basic/users/license-usage-view": {
-      "get": {
-        "parameters": [
-          {
-            "description": "start timestamp in unix seconds",
-            "example": "1714550400",
-            "in": "query",
-            "name": "start",
-            "schema": {
-              "description": "start timestamp in unix seconds",
-              "example": "1714550400",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "end timestamp in unix seconds",
-            "example": "1714636800",
-            "in": "query",
-            "name": "end",
-            "schema": {
-              "description": "end timestamp in unix seconds",
-              "example": "1714636800",
-              "format": "int64",
-              "properties": {},
-              "type": "integer"
-            }
-          },
-          {
-            "description": "enterprise id",
-            "example": "ent_12345",
-            "in": "query",
-            "name": "ent_id",
-            "schema": {
-              "description": "enterprise id",
-              "example": "ent_12345",
-              "format": "string",
-              "properties": {},
-              "type": "string"
-            }
-          },
-          {
-            "description": "query type: month, day",
-            "example": "month",
-            "in": "query",
-            "name": "type",
-            "schema": {
-              "default": "month",
-              "description": "query type: month, day",
-              "enum": [
-                "month",
-                "day"
-              ],
-              "example": "month",
-              "format": "string",
-              "properties": {},
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "0-success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "code": 0,
-                      "data": {
-                        "records": [
-                          {
-                            "account_id": 12345,
-                            "capacity": 1000,
-                            "timestamp": 1714550400,
-                            "total_usage": 500
-                          }
-                        ]
-                      },
-                      "message": ""
-                    }
-                  },
-                  "1-error-50": {
-                    "summary": "Internal error (code=50)",
-                    "value": {
-                      "code": 50,
-                      "data": null,
-                      "message": "Internal Error"
-                    }
-                  },
-                  "2-error-51": {
-                    "summary": "Validation failed (code=51)",
-                    "value": {
-                      "code": 51,
-                      "data": null,
-                      "message": "Validation Failed"
-                    }
-                  },
-                  "3-error-53": {
-                    "summary": "Invalid parameter (code=53)",
-                    "value": {
-                      "code": 53,
-                      "data": null,
-                      "message": "Invalid Parameter"
-                    }
-                  },
-                  "4-error-54": {
-                    "summary": "Missing parameter (code=54)",
-                    "value": {
-                      "code": 54,
-                      "data": null,
-                      "message": "Missing Parameter"
-                    }
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/LicenseUsageViewRes_GoFrameResponse"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "ApiRequestAuthorizer": []
-          }
-        ],
-        "summary": "Get License Usage History for an Enterprise",
-        "tags": [
-          "Usage (ABP)"
-        ]
-      },
-      "summary": "Get License Usage History for an Enterprise"
     },
     "/abp/portal/bot/deltas": {
       "get": {
@@ -36971,6 +36342,14 @@
           {
             "description": " ",
             "in": "query",
+            "name": "health_check_auth_key_version",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "description": " ",
+            "in": "query",
             "name": "health_check_ssl_version",
             "schema": {
               "type": "string"
@@ -39498,6 +38877,14 @@
             "name": "server_api_ver",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": " ",
+            "in": "query",
+            "name": "server_auth_key_version",
+            "schema": {
+              "type": "number"
             }
           },
           {
@@ -44743,7 +44130,7 @@
                     "value": [
                       {
                         "name": "CVE-2021-26086",
-                        "percentage": 100
+                        "percentage": 100.0
                       }
                     ]
                   }
@@ -44813,15 +44200,6 @@
             "example": "10",
             "in": "query",
             "name": "size",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "True: only get devices with valid SOCaaS license;\nFalse: get all devices even without SOCaaS license.",
-            "example": "true",
-            "in": "query",
-            "name": "socaasonly",
             "schema": {
               "type": "string"
             }
@@ -46781,7 +46159,7 @@
                 }
               }
             },
-            "description": "Forbidden — plan not supported",
+            "description": "Forbidden \u2014 plan not supported",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -46874,18 +46252,16 @@
     },
     "/ta/settings/log_export/legacy_active_eps": {
       "get": {
-        "description": "Apps still using legacy logstash_traffic_config export; used by the migration reminder banner.",
+        "description": "Apps still using legacy logstash_traffic_config export; used by the migration reminder banner. Capped at 11 items: if 11 are returned, more matching apps exist but were not scanned \u2014 the UI renders '10+' in that case.",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "example": {
-                  "count": 1,
-                  "legacy_eps": [
+                  "items": [
                     {
-                      "ep_domain": "example.com",
-                      "ep_id": "6675769296",
-                      "name": "test good bot"
+                      "app_name": "test good bot",
+                      "ep_id": "6675769296"
                     }
                   ]
                 },
@@ -46969,6 +46345,7 @@
                       "error_info": null,
                       "log_type": "traffic",
                       "name": "my-rule",
+                      "output_format": "json_lines",
                       "rule_id": "71ef27f1-5620-4400-8137-42d7c93b5005",
                       "status": {
                         "detail": "Rule is enabled and valid",
@@ -47063,6 +46440,7 @@
                     ],
                     "external_id": "abc123",
                     "name": "my-s3-rule",
+                    "output_format": "json_lines",
                     "prefix": "my-prefix"
                   }
                 },
@@ -47176,7 +46554,7 @@
                 }
               }
             },
-            "description": "Forbidden — plan not supported or rule limit reached",
+            "description": "Forbidden \u2014 plan not supported or rule limit reached",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -47300,7 +46678,7 @@
                 }
               }
             },
-            "description": "Forbidden — plan not supported",
+            "description": "Forbidden \u2014 plan not supported",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -47444,6 +46822,7 @@
                   "external_id": "abc123",
                   "log_type": "traffic",
                   "name": "my-s3-rule",
+                  "output_format": "json_lines",
                   "prefix": "my-prefix",
                   "rule_id": "71ef27f1-5620-4400-8137-42d7c93b5005",
                   "status": {
@@ -47548,7 +46927,8 @@
                       "4013620080",
                       "5555555555"
                     ],
-                    "name": "my-updated-s3-rule"
+                    "name": "my-updated-s3-rule",
+                    "output_format": "json_lines"
                   }
                 },
                 "example-1": {
@@ -47566,7 +46946,8 @@
                       "6675769296",
                       "4013620080"
                     ],
-                    "name": "my-s3-rule"
+                    "name": "my-s3-rule",
+                    "output_format": "json_lines"
                   }
                 }
               },
@@ -47611,6 +46992,7 @@
                   "error_info": null,
                   "log_type": "traffic",
                   "name": "my-updated-s3-rule",
+                  "output_format": "json_lines",
                   "rule_id": "71ef27f1-5620-4400-8137-42d7c93b5005",
                   "status": {
                     "detail": "Rule is enabled and valid",
@@ -47659,7 +47041,7 @@
                 }
               }
             },
-            "description": "Forbidden — plan not supported",
+            "description": "Forbidden \u2014 plan not supported",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -47741,7 +47123,7 @@
                 }
               }
             },
-            "description": "Successful — check completed",
+            "description": "Successful \u2014 check completed",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -47776,7 +47158,7 @@
                 }
               }
             },
-            "description": "Forbidden — plan not supported",
+            "description": "Forbidden \u2014 plan not supported",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -47905,7 +47287,7 @@
                 }
               }
             },
-            "description": "Forbidden — plan not supported",
+            "description": "Forbidden \u2014 plan not supported",
             "headers": {
               "Access-Control-Allow-Origin": {
                 "schema": {
@@ -47953,7 +47335,7 @@
             }
           },
           {
-            "description": "The filter should like: [{\"id\":\"domain_name\", \"logic\":{}, \"value\":[\"www1.demo.com\"]}], then URL encode this filter string and put this in filter parameter.\n\nThe available \"id\" of filter are [\"app_name\", \"domain_name\", \"block_mode\", \"platform\", \"owner\", \"data\", \"blocked_req\", \"req\", \"template_name\"].",
+            "description": "The filter should like: [{\"id\":\"domain_name\", \"logic\":{}, \"value\":[\"www1.demo.com\"]}], then URL encode this filter string and put this in filter parameter.\n\nThe available \"id\" of filter are [\"app_name\", \"domain_name\", \"block_mode\", \"platform\", \"owner\", \"data\", \"blocked_req\", \"req\", \"template_name\", \"ep_id\"].",
             "in": "query",
             "name": "filter",
             "schema": {
@@ -48157,8 +47539,6 @@
                   "a.example.com",
                   "b.example.com"
                 ],
-                "head_availability": 1,
-                "head_status_code": 404,
                 "is_global_cdn": 1,
                 "oc_gslb": {
                   "bypass": false,
@@ -48584,7 +47964,7 @@
         ]
       },
       "get": {
-        "description": "<details><summary>Get some brief information of an application.</summary>`/waf/apps/{{ep_id}}`</details>\n\n<details><summary>Get application DNS status.</summary>`/waf/apps/{{ep_id}}?dns_resolve=true`</details>\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "description": "<details><summary>Get some brief information of an application.</summary>`/waf/apps/{{ep_id}}`</details>\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
         "parameters": [
           {
             "description": "The application ID, it can be obtained from List Applications API.",
@@ -48594,13 +47974,6 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "dns_resolve",
-            "schema": {
-              "type": "boolean"
             }
           }
         ],
@@ -48620,40 +47993,6 @@
                         "us-east-1",
                         "us-west-1"
                       ]
-                    }
-                  },
-                  "example-1": {
-                    "summary": "Get application DNS status",
-                    "value": {
-                      "detail": "successfully",
-                      "result": {
-                        "acme_info": [
-                          {
-                            "cname_name": "_acme-challenge.az.waasonline-test.com",
-                            "cname_value": "_acme-challenge.az.waasonline-test.52935.waasonline.net",
-                            "status": false
-                          }
-                        ],
-                        "dns_status": 0,
-                        "domain_status": {
-                          "rg-azure30.waasonline-test.com": {
-                            "current_record": {
-                              "A": "N/A",
-                              "CNAME": "N/A"
-                            },
-                            "dns_status": 0
-                          }
-                        },
-                        "ep_cname": "az.waasonline-test.52935.waasonline.net",
-                        "ep_id": "2913489081",
-                        "naked_domain_ips": {
-                          "A": [
-                            "20.50.222.94",
-                            "20.54.176.184"
-                          ]
-                        },
-                        "update_time": "UTC-2022-04-06 16:56:20"
-                      }
                     }
                   }
                 },
@@ -48696,7 +48035,7 @@
         ]
       },
       "put": {
-        "description": "<details><summary>Update application, including app_name, user alias, and CDN status.</summary>`/waf/apps/{{ep_id}}`</details>\n\n<details><summary>Update application DNS status.</summary>`/waf/apps/{{ep_id}}?dns_resolve=true`</details>\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "description": "<details><summary>Update application, including app_name, user alias, and CDN status.</summary>`/waf/apps/{{ep_id}}`</details>\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
         "parameters": [
           {
             "description": "The application ID, it can be obtained from List Applications API.",
@@ -48706,13 +48045,6 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "dns_resolve",
-            "schema": {
-              "type": "boolean"
             }
           }
         ],
@@ -48727,39 +48059,7 @@
                     "cdn_status": 0,
                     "continent": "NA",
                     "is_global_cdn": 0,
-                    "region": "us-east-1",
-                    "user_name": "foo"
-                  }
-                },
-                "example-1": {
-                  "summary": "Update application DNS status",
-                  "value": {
-                    "acme_info": [
-                      {
-                        "cname_name": "_acme-challenge.az.waasonline-test.com",
-                        "cname_value": "_acme-challenge.az.waasonline-test.52935.waasonline.net",
-                        "status": false
-                      }
-                    ],
-                    "dns_status": 0,
-                    "domain_status": {
-                      "rg-azure30.waasonline-test.com": {
-                        "current_record": {
-                          "A": "N/A",
-                          "CNAME": "N/A"
-                        },
-                        "dns_status": 0
-                      }
-                    },
-                    "ep_cname": "az.waasonline-test.52935.waasonline.net",
-                    "ep_id": "2913489081",
-                    "naked_domain_ips": {
-                      "A": [
-                        "20.50.222.94",
-                        "20.54.176.184"
-                      ]
-                    },
-                    "update_time": "UTC-2022-04-06 16:56:20"
+                    "region": "us-east-1"
                   }
                 }
               },
@@ -48810,6 +48110,164 @@
         "summary": "Update Application",
         "tags": [
           "Application Basic"
+        ]
+      }
+    },
+    "/waf/apps/{ep_id}/acceleration": {
+      "get": {
+        "description": "Get the configuration of Web Content Acceleration.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": {
+                    "configs": {
+                      "css_minify": true,
+                      "exception_list": [
+                        {
+                          "host": "example.com",
+                          "host_status": true,
+                          "id": 1,
+                          "url_pattern": "/api/",
+                          "url_type": "string"
+                        }
+                      ],
+                      "html_combine_heads": true,
+                      "html_css2head": true,
+                      "html_minify": true,
+                      "js_minify": true,
+                      "status": true
+                    },
+                    "template": false
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/GetAcceleration"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No ID specified"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "summary": "Get Web Content Acceleration",
+        "tags": [
+          "Application Delivery"
+        ]
+      },
+      "put": {
+        "description": "Update the configuration of Web Content Acceleration.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "configs": {
+                  "css_minify": true,
+                  "exception_list": [
+                    {
+                      "host": "example.com",
+                      "host_status": true,
+                      "id": 1,
+                      "url_pattern": "/api/",
+                      "url_type": "string"
+                    }
+                  ],
+                  "html_combine_heads": true,
+                  "html_css2head": true,
+                  "html_minify": true,
+                  "js_minify": true,
+                  "status": true
+                },
+                "template": false
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PutAcceleration"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": "Success"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No ID specified"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "summary": "Update Web Content Acceleration",
+        "tags": [
+          "Application Delivery"
         ]
       }
     },
@@ -51044,6 +50502,177 @@
         "summary": "Update Caching and Compression",
         "tags": [
           "Application Delivery"
+        ]
+      }
+    },
+    "/waf/apps/{ep_id}/cert_proxy": {
+      "get": {
+        "description": "Get the information of Sign CA certificates.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "True: the next page.\n\nFalse: the previous page.",
+            "in": "query",
+            "name": "forward",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "To list the items of the first page, leave the cursor value empty.\n\nTo go forward to next page, get the value of the 'next_cursor' parameter in the result of the current page, then paste it here as the cursor value.\n\nTo go to the previous page, get the 'prev_cursor' value, then paste it here as the cursor value.",
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "An integer, the page size. The value shall be 10, 20, 30.",
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "default": "default_pool",
+            "description": "The server pool name.",
+            "in": "query",
+            "name": "pool_name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "default": 1,
+            "description": "The index of the server.",
+            "in": "query",
+            "name": "server_index",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {},
+                "schema": {
+                  "$ref": "#/components/schemas/GetCert"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No ID specified"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Get Sign CA Certificates",
+        "tags": [
+          "Network"
+        ]
+      },
+      "put": {
+        "description": "Import/Delete a Sign CA certificate.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {},
+              "schema": {
+                "$ref": "#/components/schemas/PutCert"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Module updated"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ModuleUpdated"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No ID specified"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Update Sign CA Certificate",
+        "tags": [
+          "Network"
         ]
       }
     },
@@ -53700,6 +53329,199 @@
         ]
       }
     },
+    "/waf/apps/{ep_id}/dns_resolve": {
+      "get": {
+        "description": "<details><summary>Get application DNS status.</summary>`/waf/apps/{{ep_id}}/dns_resolve`</details>\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "example-1": {
+                    "summary": "Get application DNS status",
+                    "value": {
+                      "detail": "successfully",
+                      "result": {
+                        "acme_info": [
+                          {
+                            "cname_name": "_acme-challenge.az.waasonline-test.com",
+                            "cname_value": "_acme-challenge.az.waasonline-test.52935.waasonline.net",
+                            "status": false
+                          }
+                        ],
+                        "dns_status": 0,
+                        "domain_status": {
+                          "rg-azure30.waasonline-test.com": {
+                            "current_record": {
+                              "A": "N/A",
+                              "CNAME": "N/A"
+                            },
+                            "dns_status": 0
+                          }
+                        },
+                        "ep_cname": "az.waasonline-test.52935.waasonline.net",
+                        "ep_id": "2913489081",
+                        "naked_domain_ips": {
+                          "A": [
+                            "20.50.222.94",
+                            "20.54.176.184"
+                          ]
+                        },
+                        "update_time": "UTC-2022-04-06 16:56:20"
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Invalid HTTP method"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Get Application DNS Status",
+        "tags": [
+          "Application Basic"
+        ]
+      },
+      "put": {
+        "description": "<details><summary>Update application DNS status.</summary>`/waf/apps/{{ep_id}}/dns_resolve`</details>\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "example-1": {
+                  "summary": "Update application DNS status",
+                  "value": {
+                    "acme_info": [
+                      {
+                        "cname_name": "_acme-challenge.az.waasonline-test.com",
+                        "cname_value": "_acme-challenge.az.waasonline-test.52935.waasonline.net",
+                        "status": false
+                      }
+                    ],
+                    "dns_status": 0,
+                    "domain_status": {
+                      "rg-azure30.waasonline-test.com": {
+                        "current_record": {
+                          "A": "N/A",
+                          "CNAME": "N/A"
+                        },
+                        "dns_status": 0
+                      }
+                    },
+                    "ep_cname": "az.waasonline-test.52935.waasonline.net",
+                    "ep_id": "2913489081",
+                    "naked_domain_ips": {
+                      "A": [
+                        "20.50.222.94",
+                        "20.54.176.184"
+                      ]
+                    },
+                    "update_time": "UTC-2022-04-06 16:56:20"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SingleJsonObject"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Get application DNS status failed"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Update Application DNS Status",
+        "tags": [
+          "Application Basic"
+        ]
+      }
+    },
     "/waf/apps/{ep_id}/endpoint": {
       "get": {
         "description": "Get the information of endpoints configuration.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
@@ -53722,10 +53544,8 @@
                 "example": {
                   "app_name": "wl_us1",
                   "block_mode": 1,
-                  "block_url": "/test/block.html",
-                  "cert_auto_status": 0,
+                  "block_url": "PredefinedMsg",
                   "cert_type": 0,
-                  "custom_block_page": "enable",
                   "custom_port": {
                     "http": 80,
                     "https": 443
@@ -53827,8 +53647,14 @@
                       "TLS_AES_128_CCM_SHA256",
                       "TLS_AES_256_GCM_SHA384"
                     ],
-                    "encryption_level": 2,
+                    "encryption_level": "mozilla_intermediate",
+                    "hsts_header": 0,
+                    "hsts_max_age": 31536000,
+                    "hsts_preload": 0,
+                    "hsts_sub_domains": 0,
                     "http_2_https": 1,
+                    "internal_cookie_httponly": 0,
+                    "internal_cookie_secure": 0,
                     "selected_ssl_custom_cipher": [
                       "ECDHE-ECDSA-AES256-GCM-SHA384",
                       "ECDHE-RSA-AES256-GCM-SHA384",
@@ -53858,7 +53684,6 @@
                     "selected_tls13_custom_cipher": [
                       "TLS_AES_256_GCM_SHA384"
                     ],
-                    "tls_1_0": 0,
                     "tls_1_1": 0,
                     "tls_1_2": 0,
                     "tls_1_3": 1
@@ -53920,10 +53745,8 @@
           "content": {
             "application/json": {
               "example": {
-                "app_name": "test",
                 "block_mode": 1,
                 "block_url": "PredefinedMsg",
-                "cert_auto_status": 0,
                 "cert_challenge_mode": 1,
                 "cert_type": 0,
                 "client_cert_fwd": true,
@@ -53932,8 +53755,6 @@
                 "client_cert_verify": true,
                 "custom_http_port": 8080,
                 "custom_https_port": 443,
-                "domain_name": "test.demo.com",
-                "ep_cname": "test.demo.38906.waasonline.net.",
                 "extra_domains": [
                   "demo.com",
                   "avc.demo.com"
@@ -53947,9 +53768,8 @@
                   "status": true,
                   "zone": "zone.com."
                 },
-                "platform": "AWS",
                 "ssl_options": {
-                  "encryption_level": "high",
+                  "encryption_level": "mozilla_intermediate",
                   "hsts_header": 0,
                   "hsts_max_age": 31536000,
                   "hsts_preload": 0,
@@ -54034,6 +53854,145 @@
         "summary": "Update Endpoints",
         "tags": [
           "Network"
+        ]
+      }
+    },
+    "/waf/apps/{ep_id}/endpoint/cert_domains/{uuid}": {
+      "get": {
+        "description": "Fetch the detail of the automatic certificate",
+        "parameters": [
+          {
+            "description": "The application ID",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The automatic certificate ID",
+            "example": "{{uuid}}",
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "expired": "",
+                  "issued_by": "",
+                  "issued_to": "domain.com",
+                  "log_detail": [],
+                  "san": [],
+                  "status": "OK",
+                  "uuid": "auto_cert_id"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Success",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Could not access the automatic certificate"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Get Automatic Certificate",
+        "tags": [
+          "Application Basic"
+        ]
+      }
+    },
+    "/waf/apps/{ep_id}/endpoint/cert_domains/{uuid}/refresh": {
+      "put": {
+        "description": "Refresh the automatic certificate of the application",
+        "parameters": [
+          {
+            "description": "The application ID",
+            "example": "{{ep_id}}",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The automatic certificate ID",
+            "example": "{{uuid}}",
+            "in": "path",
+            "name": "uuid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {},
+            "description": "Success",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Could not refresh the automatic certificate"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Refresh Automatic Certificate",
+        "tags": [
+          "Application Basic"
         ]
       }
     },
@@ -59791,6 +59750,11 @@
                     "id": "advanced_bot_protection",
                     "inherited": "enable",
                     "status": "enable"
+                  },
+                  {
+                    "id": "acceleration",
+                    "inherited": "disable",
+                    "status": "disable"
                   }
                 ],
                 "schema": {
@@ -59982,6 +59946,10 @@
                 {
                   "id": "advanced_bot_protection",
                   "status": "enable"
+                },
+                {
+                  "id": "acceleration",
+                  "status": "disable"
                 }
               ],
               "schema": {
@@ -61774,6 +61742,7 @@
                           {
                             "addr": "1.1.1.1",
                             "backup": false,
+                            "cert_proxy": false,
                             "enc_level": "high",
                             "health_check_status": "disable",
                             "http2": false,
@@ -61791,6 +61760,7 @@
                           {
                             "addr": "2.2.2.2",
                             "backup": false,
+                            "cert_proxy": false,
                             "enc_level": "high",
                             "health_check_status": "disable",
                             "http2": false,
@@ -61888,6 +61858,7 @@
                       {
                         "addr": "1.1.1.1",
                         "backup": false,
+                        "cert_proxy": false,
                         "cert_verify": false,
                         "enc_level": "mozilla_modern",
                         "http2": false,
@@ -61905,6 +61876,7 @@
                       {
                         "addr": "2.2.2.2",
                         "backup": false,
+                        "cert_proxy": false,
                         "cert_verify": false,
                         "enc_level": "mozilla_modern",
                         "http2": false,
@@ -66733,6 +66705,1750 @@
         ]
       }
     },
+    "/waf/apps/{ep_id}/traffic_summary/agent_statistics": {
+      "get": {
+        "parameters": [
+          {
+            "description": "The application ID, it can be obtained from List Applications API.",
+            "in": "path",
+            "name": "ep_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The type of query result",
+            "example": "summary",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "enum": [
+                "summary",
+                "details"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The start time of timespan",
+            "example": "1660254596243",
+            "in": "query",
+            "name": "start_time",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The end time of timespan",
+            "example": "1660340996243",
+            "in": "query",
+            "name": "end_time",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Deprecated, this parameter is ignored by the server",
+            "example": 1,
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Deprecated, this parameter is ignored by the server. The result table size is fixed by the server (top 5 for summary, top 100 for details)",
+            "example": 10,
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Filter on user agents, only \"http_agent\" is supported. Each agent is the browser family with an optional major version, for example, for the Agent details table, the filter is {\"http_agent\": \"Chrome/104,Firefox\"}. Invalid agents are rejected with 400",
+            "in": "query",
+            "name": "filter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "example-0": {
+                    "summary": "Get Traffic Log Agent Statics Summary",
+                    "value": {
+                      "details": {
+                        "Chrome/104": {
+                          "count": 17
+                        },
+                        "Firefox/103": {
+                          "count": 4
+                        },
+                        "PostmanRuntime/7": {
+                          "count": 6
+                        },
+                        "Safari/15": {
+                          "count": 3
+                        },
+                        "curl/7": {
+                          "count": 21
+                        }
+                      },
+                      "summary": {
+                        "count": 145,
+                        "end": "1660340996243",
+                        "graph": [
+                          {
+                            "data": [],
+                            "id": 1,
+                            "time": 1660254000000
+                          },
+                          {
+                            "data": [],
+                            "id": 2,
+                            "time": 1660254600000
+                          },
+                          {
+                            "data": [],
+                            "id": 3,
+                            "time": 1660255200000
+                          },
+                          {
+                            "data": [],
+                            "id": 4,
+                            "time": 1660255800000
+                          },
+                          {
+                            "data": [],
+                            "id": 5,
+                            "time": 1660256400000
+                          },
+                          {
+                            "data": [],
+                            "id": 6,
+                            "time": 1660257000000
+                          },
+                          {
+                            "data": [],
+                            "id": 7,
+                            "time": 1660257600000
+                          },
+                          {
+                            "data": [],
+                            "id": 8,
+                            "time": 1660258200000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "Chrome/104",
+                                "value": {
+                                  "count_sum": 2
+                                }
+                              }
+                            ],
+                            "id": 9,
+                            "time": 1660258800000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "Chrome/104",
+                                "value": {
+                                  "count_sum": 4
+                                }
+                              }
+                            ],
+                            "id": 10,
+                            "time": 1660259400000
+                          },
+                          {
+                            "data": [],
+                            "id": 11,
+                            "time": 1660260000000
+                          },
+                          {
+                            "data": [],
+                            "id": 12,
+                            "time": 1660260600000
+                          },
+                          {
+                            "data": [],
+                            "id": 13,
+                            "time": 1660261200000
+                          },
+                          {
+                            "data": [],
+                            "id": 14,
+                            "time": 1660261800000
+                          },
+                          {
+                            "data": [],
+                            "id": 15,
+                            "time": 1660262400000
+                          },
+                          {
+                            "data": [],
+                            "id": 16,
+                            "time": 1660263000000
+                          },
+                          {
+                            "data": [],
+                            "id": 17,
+                            "time": 1660263600000
+                          },
+                          {
+                            "data": [],
+                            "id": 18,
+                            "time": 1660264200000
+                          },
+                          {
+                            "data": [],
+                            "id": 19,
+                            "time": 1660264800000
+                          },
+                          {
+                            "data": [],
+                            "id": 20,
+                            "time": 1660265400000
+                          },
+                          {
+                            "data": [],
+                            "id": 21,
+                            "time": 1660266000000
+                          },
+                          {
+                            "data": [],
+                            "id": 22,
+                            "time": 1660266600000
+                          },
+                          {
+                            "data": [],
+                            "id": 23,
+                            "time": 1660267200000
+                          },
+                          {
+                            "data": [],
+                            "id": 24,
+                            "time": 1660267800000
+                          },
+                          {
+                            "data": [],
+                            "id": 25,
+                            "time": 1660268400000
+                          },
+                          {
+                            "data": [],
+                            "id": 26,
+                            "time": 1660269000000
+                          },
+                          {
+                            "data": [],
+                            "id": 27,
+                            "time": 1660269600000
+                          },
+                          {
+                            "data": [],
+                            "id": 28,
+                            "time": 1660270200000
+                          },
+                          {
+                            "data": [],
+                            "id": 29,
+                            "time": 1660270800000
+                          },
+                          {
+                            "data": [],
+                            "id": 30,
+                            "time": 1660271400000
+                          },
+                          {
+                            "data": [],
+                            "id": 31,
+                            "time": 1660272000000
+                          },
+                          {
+                            "data": [],
+                            "id": 32,
+                            "time": 1660272600000
+                          },
+                          {
+                            "data": [],
+                            "id": 33,
+                            "time": 1660273200000
+                          },
+                          {
+                            "data": [],
+                            "id": 34,
+                            "time": 1660273800000
+                          },
+                          {
+                            "data": [],
+                            "id": 35,
+                            "time": 1660274400000
+                          },
+                          {
+                            "data": [],
+                            "id": 36,
+                            "time": 1660275000000
+                          },
+                          {
+                            "data": [],
+                            "id": 37,
+                            "time": 1660275600000
+                          },
+                          {
+                            "data": [],
+                            "id": 38,
+                            "time": 1660276200000
+                          },
+                          {
+                            "data": [],
+                            "id": 39,
+                            "time": 1660276800000
+                          },
+                          {
+                            "data": [],
+                            "id": 40,
+                            "time": 1660277400000
+                          },
+                          {
+                            "data": [],
+                            "id": 41,
+                            "time": 1660278000000
+                          },
+                          {
+                            "data": [],
+                            "id": 42,
+                            "time": 1660278600000
+                          },
+                          {
+                            "data": [],
+                            "id": 43,
+                            "time": 1660279200000
+                          },
+                          {
+                            "data": [],
+                            "id": 44,
+                            "time": 1660279800000
+                          },
+                          {
+                            "data": [],
+                            "id": 45,
+                            "time": 1660280400000
+                          },
+                          {
+                            "data": [],
+                            "id": 46,
+                            "time": 1660281000000
+                          },
+                          {
+                            "data": [],
+                            "id": 47,
+                            "time": 1660281600000
+                          },
+                          {
+                            "data": [],
+                            "id": 48,
+                            "time": 1660282200000
+                          },
+                          {
+                            "data": [],
+                            "id": 49,
+                            "time": 1660282800000
+                          },
+                          {
+                            "data": [],
+                            "id": 50,
+                            "time": 1660283400000
+                          },
+                          {
+                            "data": [],
+                            "id": 51,
+                            "time": 1660284000000
+                          },
+                          {
+                            "data": [],
+                            "id": 52,
+                            "time": 1660284600000
+                          },
+                          {
+                            "data": [],
+                            "id": 53,
+                            "time": 1660285200000
+                          },
+                          {
+                            "data": [],
+                            "id": 54,
+                            "time": 1660285800000
+                          },
+                          {
+                            "data": [],
+                            "id": 55,
+                            "time": 1660286400000
+                          },
+                          {
+                            "data": [],
+                            "id": 56,
+                            "time": 1660287000000
+                          },
+                          {
+                            "data": [],
+                            "id": 57,
+                            "time": 1660287600000
+                          },
+                          {
+                            "data": [],
+                            "id": 58,
+                            "time": 1660288200000
+                          },
+                          {
+                            "data": [],
+                            "id": 59,
+                            "time": 1660288800000
+                          },
+                          {
+                            "data": [],
+                            "id": 60,
+                            "time": 1660289400000
+                          },
+                          {
+                            "data": [],
+                            "id": 61,
+                            "time": 1660290000000
+                          },
+                          {
+                            "data": [],
+                            "id": 62,
+                            "time": 1660290600000
+                          },
+                          {
+                            "data": [],
+                            "id": 63,
+                            "time": 1660291200000
+                          },
+                          {
+                            "data": [],
+                            "id": 64,
+                            "time": 1660291800000
+                          },
+                          {
+                            "data": [],
+                            "id": 65,
+                            "time": 1660292400000
+                          },
+                          {
+                            "data": [],
+                            "id": 66,
+                            "time": 1660293000000
+                          },
+                          {
+                            "data": [],
+                            "id": 67,
+                            "time": 1660293600000
+                          },
+                          {
+                            "data": [],
+                            "id": 68,
+                            "time": 1660294200000
+                          },
+                          {
+                            "data": [],
+                            "id": 69,
+                            "time": 1660294800000
+                          },
+                          {
+                            "data": [],
+                            "id": 70,
+                            "time": 1660295400000
+                          },
+                          {
+                            "data": [],
+                            "id": 71,
+                            "time": 1660296000000
+                          },
+                          {
+                            "data": [],
+                            "id": 72,
+                            "time": 1660296600000
+                          },
+                          {
+                            "data": [],
+                            "id": 73,
+                            "time": 1660297200000
+                          },
+                          {
+                            "data": [],
+                            "id": 74,
+                            "time": 1660297800000
+                          },
+                          {
+                            "data": [],
+                            "id": 75,
+                            "time": 1660298400000
+                          },
+                          {
+                            "data": [],
+                            "id": 76,
+                            "time": 1660299000000
+                          },
+                          {
+                            "data": [],
+                            "id": 77,
+                            "time": 1660299600000
+                          },
+                          {
+                            "data": [],
+                            "id": 78,
+                            "time": 1660300200000
+                          },
+                          {
+                            "data": [],
+                            "id": 79,
+                            "time": 1660300800000
+                          },
+                          {
+                            "data": [],
+                            "id": 80,
+                            "time": 1660301400000
+                          },
+                          {
+                            "data": [],
+                            "id": 81,
+                            "time": 1660302000000
+                          },
+                          {
+                            "data": [],
+                            "id": 82,
+                            "time": 1660302600000
+                          },
+                          {
+                            "data": [],
+                            "id": 83,
+                            "time": 1660303200000
+                          },
+                          {
+                            "data": [],
+                            "id": 84,
+                            "time": 1660303800000
+                          },
+                          {
+                            "data": [],
+                            "id": 85,
+                            "time": 1660304400000
+                          },
+                          {
+                            "data": [],
+                            "id": 86,
+                            "time": 1660305000000
+                          },
+                          {
+                            "data": [],
+                            "id": 87,
+                            "time": 1660305600000
+                          },
+                          {
+                            "data": [],
+                            "id": 88,
+                            "time": 1660306200000
+                          },
+                          {
+                            "data": [],
+                            "id": 89,
+                            "time": 1660306800000
+                          },
+                          {
+                            "data": [],
+                            "id": 90,
+                            "time": 1660307400000
+                          },
+                          {
+                            "data": [],
+                            "id": 91,
+                            "time": 1660308000000
+                          },
+                          {
+                            "data": [],
+                            "id": 92,
+                            "time": 1660308600000
+                          },
+                          {
+                            "data": [],
+                            "id": 93,
+                            "time": 1660309200000
+                          },
+                          {
+                            "data": [],
+                            "id": 94,
+                            "time": 1660309800000
+                          },
+                          {
+                            "data": [],
+                            "id": 95,
+                            "time": 1660310400000
+                          },
+                          {
+                            "data": [],
+                            "id": 96,
+                            "time": 1660311000000
+                          },
+                          {
+                            "data": [],
+                            "id": 97,
+                            "time": 1660311600000
+                          },
+                          {
+                            "data": [],
+                            "id": 98,
+                            "time": 1660312200000
+                          },
+                          {
+                            "data": [],
+                            "id": 99,
+                            "time": 1660312800000
+                          },
+                          {
+                            "data": [],
+                            "id": 100,
+                            "time": 1660313400000
+                          },
+                          {
+                            "data": [],
+                            "id": 101,
+                            "time": 1660314000000
+                          },
+                          {
+                            "data": [],
+                            "id": 102,
+                            "time": 1660314600000
+                          },
+                          {
+                            "data": [],
+                            "id": 103,
+                            "time": 1660315200000
+                          },
+                          {
+                            "data": [],
+                            "id": 104,
+                            "time": 1660315800000
+                          },
+                          {
+                            "data": [],
+                            "id": 105,
+                            "time": 1660316400000
+                          },
+                          {
+                            "data": [],
+                            "id": 106,
+                            "time": 1660317000000
+                          },
+                          {
+                            "data": [],
+                            "id": 107,
+                            "time": 1660317600000
+                          },
+                          {
+                            "data": [],
+                            "id": 108,
+                            "time": 1660318200000
+                          },
+                          {
+                            "data": [],
+                            "id": 109,
+                            "time": 1660318800000
+                          },
+                          {
+                            "data": [],
+                            "id": 110,
+                            "time": 1660319400000
+                          },
+                          {
+                            "data": [],
+                            "id": 111,
+                            "time": 1660320000000
+                          },
+                          {
+                            "data": [],
+                            "id": 112,
+                            "time": 1660320600000
+                          },
+                          {
+                            "data": [],
+                            "id": 113,
+                            "time": 1660321200000
+                          },
+                          {
+                            "data": [],
+                            "id": 114,
+                            "time": 1660321800000
+                          },
+                          {
+                            "data": [],
+                            "id": 115,
+                            "time": 1660322400000
+                          },
+                          {
+                            "data": [],
+                            "id": 116,
+                            "time": 1660323000000
+                          },
+                          {
+                            "data": [],
+                            "id": 117,
+                            "time": 1660323600000
+                          },
+                          {
+                            "data": [],
+                            "id": 118,
+                            "time": 1660324200000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "Chrome/104",
+                                "value": {
+                                  "count_sum": 1
+                                }
+                              }
+                            ],
+                            "id": 119,
+                            "time": 1660324800000
+                          },
+                          {
+                            "data": [],
+                            "id": 120,
+                            "time": 1660325400000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "PostmanRuntime/7",
+                                "value": {
+                                  "count_sum": 3
+                                }
+                              }
+                            ],
+                            "id": 121,
+                            "time": 1660326000000
+                          },
+                          {
+                            "data": [],
+                            "id": 122,
+                            "time": 1660326600000
+                          },
+                          {
+                            "data": [],
+                            "id": 123,
+                            "time": 1660327200000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 3
+                                }
+                              }
+                            ],
+                            "id": 124,
+                            "time": 1660327800000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 12
+                                }
+                              }
+                            ],
+                            "id": 125,
+                            "time": 1660328400000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "Chrome/104",
+                                "value": {
+                                  "count_sum": 5
+                                }
+                              },
+                              {
+                                "source": "Firefox/103",
+                                "value": {
+                                  "count_sum": 4
+                                }
+                              },
+                              {
+                                "source": "PostmanRuntime/7",
+                                "value": {
+                                  "count_sum": 3
+                                }
+                              },
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 1
+                                }
+                              }
+                            ],
+                            "id": 126,
+                            "time": 1660329000000
+                          },
+                          {
+                            "data": [],
+                            "id": 127,
+                            "time": 1660329600000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "Chrome/104",
+                                "value": {
+                                  "count_sum": 1
+                                }
+                              }
+                            ],
+                            "id": 128,
+                            "time": 1660330200000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "Chrome/104",
+                                "value": {
+                                  "count_sum": 4
+                                }
+                              },
+                              {
+                                "source": "Safari/15",
+                                "value": {
+                                  "count_sum": 3
+                                }
+                              },
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 4
+                                }
+                              }
+                            ],
+                            "id": 129,
+                            "time": 1660330800000
+                          },
+                          {
+                            "data": [],
+                            "id": 130,
+                            "time": 1660331400000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 1
+                                }
+                              }
+                            ],
+                            "id": 131,
+                            "time": 1660332000000
+                          },
+                          {
+                            "data": [],
+                            "id": 132,
+                            "time": 1660332600000
+                          },
+                          {
+                            "data": [],
+                            "id": 133,
+                            "time": 1660333200000
+                          },
+                          {
+                            "data": [],
+                            "id": 134,
+                            "time": 1660333800000
+                          },
+                          {
+                            "data": [],
+                            "id": 135,
+                            "time": 1660334400000
+                          },
+                          {
+                            "data": [],
+                            "id": 136,
+                            "time": 1660335000000
+                          },
+                          {
+                            "data": [],
+                            "id": 137,
+                            "time": 1660335600000
+                          },
+                          {
+                            "data": [],
+                            "id": 138,
+                            "time": 1660336200000
+                          },
+                          {
+                            "data": [],
+                            "id": 139,
+                            "time": 1660336800000
+                          },
+                          {
+                            "data": [],
+                            "id": 140,
+                            "time": 1660337400000
+                          },
+                          {
+                            "data": [],
+                            "id": 141,
+                            "time": 1660338000000
+                          },
+                          {
+                            "data": [],
+                            "id": 142,
+                            "time": 1660338600000
+                          },
+                          {
+                            "data": [],
+                            "id": 143,
+                            "time": 1660339200000
+                          },
+                          {
+                            "data": [],
+                            "id": 144,
+                            "time": 1660339800000
+                          },
+                          {
+                            "data": [],
+                            "id": 145,
+                            "time": 1660340400000
+                          }
+                        ],
+                        "start": "1660254596243"
+                      }
+                    }
+                  },
+                  "example-1": {
+                    "summary": "Get Traffic Log Agent Statics Detail",
+                    "value": {
+                      "details": {
+                        "curl/7": {
+                          "count": 21
+                        }
+                      },
+                      "summary": {
+                        "count": 145,
+                        "end": "1660341146226",
+                        "graph": [
+                          {
+                            "data": [],
+                            "id": 1,
+                            "time": 1660254600000
+                          },
+                          {
+                            "data": [],
+                            "id": 2,
+                            "time": 1660255200000
+                          },
+                          {
+                            "data": [],
+                            "id": 3,
+                            "time": 1660255800000
+                          },
+                          {
+                            "data": [],
+                            "id": 4,
+                            "time": 1660256400000
+                          },
+                          {
+                            "data": [],
+                            "id": 5,
+                            "time": 1660257000000
+                          },
+                          {
+                            "data": [],
+                            "id": 6,
+                            "time": 1660257600000
+                          },
+                          {
+                            "data": [],
+                            "id": 7,
+                            "time": 1660258200000
+                          },
+                          {
+                            "data": [],
+                            "id": 8,
+                            "time": 1660258800000
+                          },
+                          {
+                            "data": [],
+                            "id": 9,
+                            "time": 1660259400000
+                          },
+                          {
+                            "data": [],
+                            "id": 10,
+                            "time": 1660260000000
+                          },
+                          {
+                            "data": [],
+                            "id": 11,
+                            "time": 1660260600000
+                          },
+                          {
+                            "data": [],
+                            "id": 12,
+                            "time": 1660261200000
+                          },
+                          {
+                            "data": [],
+                            "id": 13,
+                            "time": 1660261800000
+                          },
+                          {
+                            "data": [],
+                            "id": 14,
+                            "time": 1660262400000
+                          },
+                          {
+                            "data": [],
+                            "id": 15,
+                            "time": 1660263000000
+                          },
+                          {
+                            "data": [],
+                            "id": 16,
+                            "time": 1660263600000
+                          },
+                          {
+                            "data": [],
+                            "id": 17,
+                            "time": 1660264200000
+                          },
+                          {
+                            "data": [],
+                            "id": 18,
+                            "time": 1660264800000
+                          },
+                          {
+                            "data": [],
+                            "id": 19,
+                            "time": 1660265400000
+                          },
+                          {
+                            "data": [],
+                            "id": 20,
+                            "time": 1660266000000
+                          },
+                          {
+                            "data": [],
+                            "id": 21,
+                            "time": 1660266600000
+                          },
+                          {
+                            "data": [],
+                            "id": 22,
+                            "time": 1660267200000
+                          },
+                          {
+                            "data": [],
+                            "id": 23,
+                            "time": 1660267800000
+                          },
+                          {
+                            "data": [],
+                            "id": 24,
+                            "time": 1660268400000
+                          },
+                          {
+                            "data": [],
+                            "id": 25,
+                            "time": 1660269000000
+                          },
+                          {
+                            "data": [],
+                            "id": 26,
+                            "time": 1660269600000
+                          },
+                          {
+                            "data": [],
+                            "id": 27,
+                            "time": 1660270200000
+                          },
+                          {
+                            "data": [],
+                            "id": 28,
+                            "time": 1660270800000
+                          },
+                          {
+                            "data": [],
+                            "id": 29,
+                            "time": 1660271400000
+                          },
+                          {
+                            "data": [],
+                            "id": 30,
+                            "time": 1660272000000
+                          },
+                          {
+                            "data": [],
+                            "id": 31,
+                            "time": 1660272600000
+                          },
+                          {
+                            "data": [],
+                            "id": 32,
+                            "time": 1660273200000
+                          },
+                          {
+                            "data": [],
+                            "id": 33,
+                            "time": 1660273800000
+                          },
+                          {
+                            "data": [],
+                            "id": 34,
+                            "time": 1660274400000
+                          },
+                          {
+                            "data": [],
+                            "id": 35,
+                            "time": 1660275000000
+                          },
+                          {
+                            "data": [],
+                            "id": 36,
+                            "time": 1660275600000
+                          },
+                          {
+                            "data": [],
+                            "id": 37,
+                            "time": 1660276200000
+                          },
+                          {
+                            "data": [],
+                            "id": 38,
+                            "time": 1660276800000
+                          },
+                          {
+                            "data": [],
+                            "id": 39,
+                            "time": 1660277400000
+                          },
+                          {
+                            "data": [],
+                            "id": 40,
+                            "time": 1660278000000
+                          },
+                          {
+                            "data": [],
+                            "id": 41,
+                            "time": 1660278600000
+                          },
+                          {
+                            "data": [],
+                            "id": 42,
+                            "time": 1660279200000
+                          },
+                          {
+                            "data": [],
+                            "id": 43,
+                            "time": 1660279800000
+                          },
+                          {
+                            "data": [],
+                            "id": 44,
+                            "time": 1660280400000
+                          },
+                          {
+                            "data": [],
+                            "id": 45,
+                            "time": 1660281000000
+                          },
+                          {
+                            "data": [],
+                            "id": 46,
+                            "time": 1660281600000
+                          },
+                          {
+                            "data": [],
+                            "id": 47,
+                            "time": 1660282200000
+                          },
+                          {
+                            "data": [],
+                            "id": 48,
+                            "time": 1660282800000
+                          },
+                          {
+                            "data": [],
+                            "id": 49,
+                            "time": 1660283400000
+                          },
+                          {
+                            "data": [],
+                            "id": 50,
+                            "time": 1660284000000
+                          },
+                          {
+                            "data": [],
+                            "id": 51,
+                            "time": 1660284600000
+                          },
+                          {
+                            "data": [],
+                            "id": 52,
+                            "time": 1660285200000
+                          },
+                          {
+                            "data": [],
+                            "id": 53,
+                            "time": 1660285800000
+                          },
+                          {
+                            "data": [],
+                            "id": 54,
+                            "time": 1660286400000
+                          },
+                          {
+                            "data": [],
+                            "id": 55,
+                            "time": 1660287000000
+                          },
+                          {
+                            "data": [],
+                            "id": 56,
+                            "time": 1660287600000
+                          },
+                          {
+                            "data": [],
+                            "id": 57,
+                            "time": 1660288200000
+                          },
+                          {
+                            "data": [],
+                            "id": 58,
+                            "time": 1660288800000
+                          },
+                          {
+                            "data": [],
+                            "id": 59,
+                            "time": 1660289400000
+                          },
+                          {
+                            "data": [],
+                            "id": 60,
+                            "time": 1660290000000
+                          },
+                          {
+                            "data": [],
+                            "id": 61,
+                            "time": 1660290600000
+                          },
+                          {
+                            "data": [],
+                            "id": 62,
+                            "time": 1660291200000
+                          },
+                          {
+                            "data": [],
+                            "id": 63,
+                            "time": 1660291800000
+                          },
+                          {
+                            "data": [],
+                            "id": 64,
+                            "time": 1660292400000
+                          },
+                          {
+                            "data": [],
+                            "id": 65,
+                            "time": 1660293000000
+                          },
+                          {
+                            "data": [],
+                            "id": 66,
+                            "time": 1660293600000
+                          },
+                          {
+                            "data": [],
+                            "id": 67,
+                            "time": 1660294200000
+                          },
+                          {
+                            "data": [],
+                            "id": 68,
+                            "time": 1660294800000
+                          },
+                          {
+                            "data": [],
+                            "id": 69,
+                            "time": 1660295400000
+                          },
+                          {
+                            "data": [],
+                            "id": 70,
+                            "time": 1660296000000
+                          },
+                          {
+                            "data": [],
+                            "id": 71,
+                            "time": 1660296600000
+                          },
+                          {
+                            "data": [],
+                            "id": 72,
+                            "time": 1660297200000
+                          },
+                          {
+                            "data": [],
+                            "id": 73,
+                            "time": 1660297800000
+                          },
+                          {
+                            "data": [],
+                            "id": 74,
+                            "time": 1660298400000
+                          },
+                          {
+                            "data": [],
+                            "id": 75,
+                            "time": 1660299000000
+                          },
+                          {
+                            "data": [],
+                            "id": 76,
+                            "time": 1660299600000
+                          },
+                          {
+                            "data": [],
+                            "id": 77,
+                            "time": 1660300200000
+                          },
+                          {
+                            "data": [],
+                            "id": 78,
+                            "time": 1660300800000
+                          },
+                          {
+                            "data": [],
+                            "id": 79,
+                            "time": 1660301400000
+                          },
+                          {
+                            "data": [],
+                            "id": 80,
+                            "time": 1660302000000
+                          },
+                          {
+                            "data": [],
+                            "id": 81,
+                            "time": 1660302600000
+                          },
+                          {
+                            "data": [],
+                            "id": 82,
+                            "time": 1660303200000
+                          },
+                          {
+                            "data": [],
+                            "id": 83,
+                            "time": 1660303800000
+                          },
+                          {
+                            "data": [],
+                            "id": 84,
+                            "time": 1660304400000
+                          },
+                          {
+                            "data": [],
+                            "id": 85,
+                            "time": 1660305000000
+                          },
+                          {
+                            "data": [],
+                            "id": 86,
+                            "time": 1660305600000
+                          },
+                          {
+                            "data": [],
+                            "id": 87,
+                            "time": 1660306200000
+                          },
+                          {
+                            "data": [],
+                            "id": 88,
+                            "time": 1660306800000
+                          },
+                          {
+                            "data": [],
+                            "id": 89,
+                            "time": 1660307400000
+                          },
+                          {
+                            "data": [],
+                            "id": 90,
+                            "time": 1660308000000
+                          },
+                          {
+                            "data": [],
+                            "id": 91,
+                            "time": 1660308600000
+                          },
+                          {
+                            "data": [],
+                            "id": 92,
+                            "time": 1660309200000
+                          },
+                          {
+                            "data": [],
+                            "id": 93,
+                            "time": 1660309800000
+                          },
+                          {
+                            "data": [],
+                            "id": 94,
+                            "time": 1660310400000
+                          },
+                          {
+                            "data": [],
+                            "id": 95,
+                            "time": 1660311000000
+                          },
+                          {
+                            "data": [],
+                            "id": 96,
+                            "time": 1660311600000
+                          },
+                          {
+                            "data": [],
+                            "id": 97,
+                            "time": 1660312200000
+                          },
+                          {
+                            "data": [],
+                            "id": 98,
+                            "time": 1660312800000
+                          },
+                          {
+                            "data": [],
+                            "id": 99,
+                            "time": 1660313400000
+                          },
+                          {
+                            "data": [],
+                            "id": 100,
+                            "time": 1660314000000
+                          },
+                          {
+                            "data": [],
+                            "id": 101,
+                            "time": 1660314600000
+                          },
+                          {
+                            "data": [],
+                            "id": 102,
+                            "time": 1660315200000
+                          },
+                          {
+                            "data": [],
+                            "id": 103,
+                            "time": 1660315800000
+                          },
+                          {
+                            "data": [],
+                            "id": 104,
+                            "time": 1660316400000
+                          },
+                          {
+                            "data": [],
+                            "id": 105,
+                            "time": 1660317000000
+                          },
+                          {
+                            "data": [],
+                            "id": 106,
+                            "time": 1660317600000
+                          },
+                          {
+                            "data": [],
+                            "id": 107,
+                            "time": 1660318200000
+                          },
+                          {
+                            "data": [],
+                            "id": 108,
+                            "time": 1660318800000
+                          },
+                          {
+                            "data": [],
+                            "id": 109,
+                            "time": 1660319400000
+                          },
+                          {
+                            "data": [],
+                            "id": 110,
+                            "time": 1660320000000
+                          },
+                          {
+                            "data": [],
+                            "id": 111,
+                            "time": 1660320600000
+                          },
+                          {
+                            "data": [],
+                            "id": 112,
+                            "time": 1660321200000
+                          },
+                          {
+                            "data": [],
+                            "id": 113,
+                            "time": 1660321800000
+                          },
+                          {
+                            "data": [],
+                            "id": 114,
+                            "time": 1660322400000
+                          },
+                          {
+                            "data": [],
+                            "id": 115,
+                            "time": 1660323000000
+                          },
+                          {
+                            "data": [],
+                            "id": 116,
+                            "time": 1660323600000
+                          },
+                          {
+                            "data": [],
+                            "id": 117,
+                            "time": 1660324200000
+                          },
+                          {
+                            "data": [],
+                            "id": 118,
+                            "time": 1660324800000
+                          },
+                          {
+                            "data": [],
+                            "id": 119,
+                            "time": 1660325400000
+                          },
+                          {
+                            "data": [],
+                            "id": 120,
+                            "time": 1660326000000
+                          },
+                          {
+                            "data": [],
+                            "id": 121,
+                            "time": 1660326600000
+                          },
+                          {
+                            "data": [],
+                            "id": 122,
+                            "time": 1660327200000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 3
+                                }
+                              }
+                            ],
+                            "id": 123,
+                            "time": 1660327800000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 12
+                                }
+                              }
+                            ],
+                            "id": 124,
+                            "time": 1660328400000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 1
+                                }
+                              }
+                            ],
+                            "id": 125,
+                            "time": 1660329000000
+                          },
+                          {
+                            "data": [],
+                            "id": 126,
+                            "time": 1660329600000
+                          },
+                          {
+                            "data": [],
+                            "id": 127,
+                            "time": 1660330200000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 4
+                                }
+                              }
+                            ],
+                            "id": 128,
+                            "time": 1660330800000
+                          },
+                          {
+                            "data": [],
+                            "id": 129,
+                            "time": 1660331400000
+                          },
+                          {
+                            "data": [
+                              {
+                                "source": "curl/7",
+                                "value": {
+                                  "count_sum": 1
+                                }
+                              }
+                            ],
+                            "id": 130,
+                            "time": 1660332000000
+                          },
+                          {
+                            "data": [],
+                            "id": 131,
+                            "time": 1660332600000
+                          },
+                          {
+                            "data": [],
+                            "id": 132,
+                            "time": 1660333200000
+                          },
+                          {
+                            "data": [],
+                            "id": 133,
+                            "time": 1660333800000
+                          },
+                          {
+                            "data": [],
+                            "id": 134,
+                            "time": 1660334400000
+                          },
+                          {
+                            "data": [],
+                            "id": 135,
+                            "time": 1660335000000
+                          },
+                          {
+                            "data": [],
+                            "id": 136,
+                            "time": 1660335600000
+                          },
+                          {
+                            "data": [],
+                            "id": 137,
+                            "time": 1660336200000
+                          },
+                          {
+                            "data": [],
+                            "id": 138,
+                            "time": 1660336800000
+                          },
+                          {
+                            "data": [],
+                            "id": 139,
+                            "time": 1660337400000
+                          },
+                          {
+                            "data": [],
+                            "id": 140,
+                            "time": 1660338000000
+                          },
+                          {
+                            "data": [],
+                            "id": 141,
+                            "time": 1660338600000
+                          },
+                          {
+                            "data": [],
+                            "id": 142,
+                            "time": 1660339200000
+                          },
+                          {
+                            "data": [],
+                            "id": 143,
+                            "time": 1660339800000
+                          },
+                          {
+                            "data": [],
+                            "id": 144,
+                            "time": 1660340400000
+                          },
+                          {
+                            "data": [],
+                            "id": 145,
+                            "time": 1660341000000
+                          }
+                        ],
+                        "start": "1660254746226"
+                      }
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {},
+            "description": "Failure"
+          }
+        },
+        "security": [
+          {
+            "ApiRequestAuthorizer": []
+          }
+        ],
+        "summary": "Get Traffic Log Agent Statics",
+        "tags": [
+          "Threat View"
+        ]
+      }
+    },
     "/waf/apps/{ep_id}/traffic_summary/ip_statistics": {
       "get": {
         "parameters": [
@@ -66754,7 +68470,7 @@
             "schema": {
               "enum": [
                 "summary",
-                "detail"
+                "details"
               ],
               "type": "string"
             }
@@ -66831,7 +68547,7 @@
             }
           },
           {
-            "description": "For example, for the IP details table, the filter is {\"srccountry\": \"canada, united state\", \"src\": \"207.10.\\*.\\*\"}",
+            "description": "For example, for the IP details table, the filter is {\"srccountry\": \"canada, united state\", \"src\": \"207.10.1.1,2001:db8::1\"}. Only \"srccountry\" and \"src\" are supported, \"src\" must be a valid IP address (wildcards or CIDR are not allowed), invalid values are rejected with 400",
             "in": "query",
             "name": "filter",
             "schema": {
@@ -68859,7 +70575,7 @@
             }
           },
           {
-            "description": "the type of query result only support \"summary\" and for \"detail\"",
+            "description": "the type of query result only support \"summary\" and \"details\"",
             "in": "query",
             "name": "type",
             "schema": {
@@ -68883,7 +70599,7 @@
             }
           },
           {
-            "description": "For example, for the Agent details table, the filter is{\"http_method\":\"get\"}",
+            "description": "For example, for the HTTP Method details table, the filter is {\"http_method\":\"get,post\"}. Only \"http_method\" is supported, and only valid HTTP methods are allowed (get, put, post, delete, patch, head, options, connect, trace), invalid methods are rejected with 400",
             "in": "query",
             "name": "filter",
             "schema": {
@@ -70572,7 +72288,7 @@
             "schema": {
               "enum": [
                 "summary",
-                "detail"
+                "details"
               ],
               "type": "string"
             }
@@ -70620,7 +72336,7 @@
             }
           },
           {
-            "description": "For example, for the Agent details table, the filter is {\"http_retcode\":\"200\"}",
+            "description": "For example, for the Return Code details table, the filter is {\"http_retcode\":\"404,503\"}. Allowed values: 1xx, 2xx, 3xx, 400, 401, 403, 404, 405, 408, 409, 413, 415, 422, 429, 500, 501, 502, 503, 504, 507. Invalid return codes are rejected with 400",
             "in": "query",
             "name": "filter",
             "schema": {
@@ -72317,7 +74033,7 @@
             }
           },
           {
-            "description": "the type of query result only support \"summary\" and for \"detail\"",
+            "description": "the type of query result only support \"summary\" and \"details\"",
             "in": "query",
             "name": "type",
             "schema": {
@@ -72341,7 +74057,7 @@
             }
           },
           {
-            "description": "For example, for the URL details table, the filter is \"{?srccountry\": ?canada, united state?, \"http_url\": ?/ip/*?}\"",
+            "description": "For example, for the URL details table, the filter is {\"http_url\": \"/ip/index,/api/login\"}. Only \"http_url\" is supported, each URL must be a normalized path starting with \"/\" and matching is exact (no wildcards), invalid URLs are rejected with 400",
             "in": "query",
             "name": "filter",
             "schema": {
@@ -78378,6 +80094,148 @@
         ]
       }
     },
+    "/waf/template/{template_id}/acceleration": {
+      "get": {
+        "description": "Get the configuration of Web Content Acceleration of the template.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The template ID.",
+            "example": "{{template_id}}",
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": {
+                    "configs": {
+                      "css_minify": true,
+                      "exception_list": [],
+                      "html_combine_heads": true,
+                      "html_css2head": true,
+                      "html_minify": true,
+                      "js_minify": true,
+                      "status": true
+                    },
+                    "template": true
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/GetAcceleration"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No ID specified"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "summary": "Get Template Web Content Acceleration",
+        "tags": [
+          "Template Modules"
+        ]
+      },
+      "put": {
+        "description": "Update the configuration of Web Content Acceleration of the template.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
+        "parameters": [
+          {
+            "description": "The template ID.",
+            "example": "{{template_id}}",
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "configs": {
+                  "css_minify": true,
+                  "exception_list": [],
+                  "html_combine_heads": true,
+                  "html_css2head": true,
+                  "html_minify": true,
+                  "js_minify": true,
+                  "status": true
+                },
+                "template": true
+              },
+              "schema": {
+                "$ref": "#/components/schemas/PutAcceleration"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": "Success"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Successful",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "No ID specified"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SingleJsonObject"
+                }
+              }
+            },
+            "description": "Failure"
+          }
+        },
+        "summary": "Update Template Web Content Acceleration",
+        "tags": [
+          "Template Modules"
+        ]
+      }
+    },
     "/waf/template/{template_id}/account_takeover": {
       "get": {
         "description": "Get the configuration of account takeover of the template.\n\nRequires API key secret as `Authorization` request header. See <b>Request format</b> section for API key secret details.",
@@ -83835,6 +85693,10 @@
                   {
                     "id": "advanced_bot_protection",
                     "status": "disable"
+                  },
+                  {
+                    "id": "acceleration",
+                    "status": "disable"
                   }
                 ],
                 "schema": {
@@ -84021,6 +85883,10 @@
                 },
                 {
                   "id": "advanced_bot_protection",
+                  "status": "disable"
+                },
+                {
+                  "id": "acceleration",
                   "status": "disable"
                 }
               ],
@@ -85926,7 +87792,7 @@
       "name": "Overview"
     },
     {
-      "description": "Changes after v26.3 are summarized as below:\n\n- GET **/waf/apps/{ep_id}/waiting_room_overview** (modified):\n  - PARAMETER:\n    - time_range (modified)\n    - widget (modified)",
+      "description": "Changes after v26.3.a are summarized as below:\n\n- GET **/ta/settings/log_export/rules** (modified):\n  - RESPONSE:\n    - rules[].output_format (added)\n- POST **/ta/settings/log_export/rules** (modified):\n  - REQUEST:\n    - output_format (added)\n- GET **/ta/settings/log_export/rules/{rule_id}** (modified):\n  - RESPONSE:\n    - output_format (added)\n- PUT **/ta/settings/log_export/rules/{rule_id}** (modified):\n  - REQUEST:\n    - output_format (added)\n  - RESPONSE:\n    - output_format (added)\n- PUT **/ta/settings/log_export/rules/{rule_id}/toggle** (modified):\n  - RESPONSE:\n    - output_format (added)\n- GET **/waf/apps/{ep_id}** (modified):\n  - PARAMETER:\n    - dns_resolve (deleted)\n- PUT **/waf/apps/{ep_id}** (modified):\n  - PARAMETER:\n    - dns_resolve (deleted)\n- GET **/waf/apps/{ep_id}/dns_resolve** (added)\n- PUT **/waf/apps/{ep_id}/dns_resolve** (added)\n- PUT **/waf/apps/{ep_id}/endpoint** (modified):\n  - REQUEST:\n    - app_name (deleted)\n    - ssl_options.hsts_max_age (modified)\n- GET **/waf/apps/{ep_id}/endpoint/cert_domains/{uuid}** (added)\n- PUT **/waf/apps/{ep_id}/endpoint/cert_domains/{uuid}/refresh** (added)\n- GET **/waf/apps/{ep_id}/ml_bot_detection** (modified):\n  - RESPONSE:\n    - result.configs.challenge (modified)\n- PUT **/waf/apps/{ep_id}/ml_bot_detection** (modified):\n  - REQUEST:\n    - configs.challenge (modified)\n- GET **/waf/apps/{ep_id}/traffic_summary/agent_statistics** (modified):\n  - PARAMETER:\n    - filter (modified)\n    - page (modified)\n    - size (modified)\n    - type (modified)\n- GET **/waf/apps/{ep_id}/traffic_summary/ip_statistics** (modified):\n  - PARAMETER:\n    - filter (modified)\n    - type (modified)\n- GET **/waf/apps/{ep_id}/traffic_summary/method_statistics** (modified):\n  - PARAMETER:\n    - filter (modified)\n    - type (modified)\n- GET **/waf/apps/{ep_id}/traffic_summary/retcode_statistics** (modified):\n  - PARAMETER:\n    - filter (modified)\n    - type (modified)\n- GET **/waf/apps/{ep_id}/traffic_summary/url_statistics** (modified):\n  - PARAMETER:\n    - filter (modified)\n    - type (modified)\n- GET **/waf/template/{template_id}/ml_bot_detection** (modified):\n  - RESPONSE:\n    - result.configs.challenge (modified)\n- PUT **/waf/template/{template_id}/ml_bot_detection** (modified):\n  - REQUEST:\n    - configs.challenge (modified)",
       "name": "Changes"
     },
     {

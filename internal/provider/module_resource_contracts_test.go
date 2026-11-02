@@ -28,6 +28,7 @@ func TestAllAppModuleResourceContracts(t *testing.T) {
 	t.Parallel()
 
 	cases := []moduleResourceContract{
+		appModuleContract("acceleration", "standard"),
 		appModuleContract("account_takeover", "standard"),
 		appModuleContract("api_gateway", "standard"),
 		appModuleContract("biometrics_based_detection", "standard"),
@@ -63,8 +64,8 @@ func TestAllAppModuleResourceContracts(t *testing.T) {
 		appModuleContract("ml_api_protection", "standard"),
 		{module: "api_protection", pathModule: "api_protection", typeName: "fortiappseccloud_waf_openapi_validation", schemaShape: "openapi", identityName: "ep_id"},
 	}
-	if len(cases) != 34 {
-		t.Fatalf("app module contracts = %d, want 34", len(cases))
+	if len(cases) != 35 {
+		t.Fatalf("app module contracts = %d, want 35", len(cases))
 	}
 
 	constructors := registeredResourcesByType(t)
@@ -97,6 +98,7 @@ func TestAllTemplateModuleResourceContracts(t *testing.T) {
 	t.Parallel()
 
 	modules := []string{
+		"acceleration",
 		"account_takeover",
 		"anomaly_detection",
 		"api_gateway",
@@ -129,8 +131,8 @@ func TestAllTemplateModuleResourceContracts(t *testing.T) {
 		"web_socket_security",
 		"xml_protection_policy",
 	}
-	if len(modules) != 31 {
-		t.Fatalf("template module contracts = %d, want 31", len(modules))
+	if len(modules) != 32 {
+		t.Fatalf("template module contracts = %d, want 32", len(modules))
 	}
 
 	constructors := registeredResourcesByType(t)
@@ -198,8 +200,8 @@ func registeredResourcesByType(t *testing.T) map[string]func() resource.Resource
 		}
 		result[metadata.TypeName] = constructor
 	}
-	if len(result) != 69 {
-		t.Fatalf("registered resources = %d, want 69", len(result))
+	if len(result) != 71 {
+		t.Fatalf("registered resources = %d, want 71", len(result))
 	}
 	return result
 }

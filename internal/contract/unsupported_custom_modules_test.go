@@ -14,12 +14,12 @@ func TestReviewedUnsupportedCustomModuleContracts(t *testing.T) {
 	t.Parallel()
 
 	contracts := ReviewedUnsupportedCustomModuleContracts()
-	if len(contracts) != 7 {
-		t.Fatalf("unsupported custom module contracts = %d, want 7", len(contracts))
+	if len(contracts) != 9 {
+		t.Fatalf("unsupported custom module contracts = %d, want 9", len(contracts))
 	}
 	wantModules := []string{
-		"ca_certificate", "crl_certificate", "inter_certificate",
-		"log_settings", "server_ca", "server_crl", "sni_certificate",
+		"ca_certificate", "cert_proxy", "crl_certificate", "dns_resolve",
+		"inter_certificate", "log_settings", "server_ca", "server_crl", "sni_certificate",
 	}
 	gotModules := make([]string, 0, len(contracts))
 	owners := make(map[string]struct{}, len(contracts))

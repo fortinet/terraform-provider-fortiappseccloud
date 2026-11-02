@@ -60,6 +60,7 @@ func TestImplementedTemplateModuleSet(t *testing.T) {
 	t.Parallel()
 
 	want := []string{
+		"acceleration",
 		"account_takeover",
 		"anomaly_detection",
 		"api_gateway",

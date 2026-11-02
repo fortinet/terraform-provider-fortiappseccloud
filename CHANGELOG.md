@@ -1,3 +1,24 @@
+## Unreleased
+
+## 2.1.0 (November 2, 2026)
+
+NOTES:
+
+* **Pinned OpenAPI contract refresh:** The pinned `openapi_spec/openapi.json` input is now version 26.4 (SHA-256 `c96ba675c156cb5846bd70c7dbc820cc3ac39c72fbbd4deda71f27d9152d6741`), covering 273 WAF operations (267 public / 6 non-public). New public operations added by the API are classified as follows: `acceleration` is implemented as a generated module; `cert_proxy` is an explicit product-scope exclusion because it uploads CA certificate, private-key, and optional password content against an import/delete action shape (the same exclusion family as the certificate/CRL uploads); `traffic_summary/agent_statistics` joins the other read-only traffic statistics exclusions. The `dns_resolve` GET/PUT and `cert_domains` detail/refresh pairs are explicit scope exclusions.
+* **Application platforms:** `fortiappseccloud_waf_app.platform` now accepts `AWS`, `Azure`, and `GCP`. Configurations using `OCI` or `C8T` no longer pass validation.
+
+FEATURES:
+
+* **Web content acceleration:** Added `fortiappseccloud_waf_acceleration` for typed management of CSS/JS/HTML minification, head combining, CSS-to-head movement, and the bounded (max 256) ordered `exception_list`, with verified disable-on-destroy via `configs.status=false`.
+* **Template web content acceleration:** Added `fortiappseccloud_waf_template_acceleration` using the same typed configuration model as the application-level resource, with guarded disable-on-destroy.
+* **Application endpoint attributes:** `fortiappseccloud_waf_app` now manages `http2_status`, `ipv6_option`, `cert_challenge_mode` (`http`/`dns`), `block_url`, and the complete `ssl_options` block on the application endpoint. Unset fields preserve the remote value and refresh records the observed configuration; enabled TLS versions and the cipher lists in effect are computed from the remote configuration, and the HSTS max-age, preload, and sub-domains settings are validated as dependents of `hsts_header`. One-click GSLB and client-certificate settings remain outside this resource and keep their remote values during updates.
+
+BUG FIXES:
+
+* **Optional SSL configuration:** Existing application configurations can omit `ssl_options` without requiring an encryption level or importing the remote SSL block into Terraform state. Remote SSL settings remain preserved during unrelated endpoint updates.
+* **Application endpoint failure recovery:** Preserve the created application's identity in Terraform state if a subsequent endpoint read or settings update fails, allowing Terraform to clean up a partial creation.
+* **Endpoint state and validation:** Preserve empty block-page names returned by the API and defer HSTS dependency validation while `hsts_header` is unknown.
+
 ## 2.0.1 (September 7, 2026)
 
 ENHANCEMENTS:

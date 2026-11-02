@@ -55,7 +55,7 @@ resource "fortiappseccloud_waf_url_access" "example" {
       - `rule_list.item.action` (Required, one of `alert_deny`, `continue`, `deny_no_log`, `pass`) — Action for detected rule violations.
       - `rule_list.item.name` (Required, maximum 39 UTF-8 characters) — Rule name.
       - `rule_list.item.url` (Required, maximum 255 UTF-8 characters) — Request URL.
-      - `rule_list.item.url_type` (Required, one of `regex`, `string`) — Whether the url field is matched as a literal string or a backend-validated regular expression.
+      - `rule_list.item.url_type` (Required, one of `regex`, `string`) — Selects literal string or regular-expression matching; regular-expression syntax is validated by the API.
 
 The wire-only `idx` field is never exposed. The provider regenerates sequential one-based indices independently for each list, validates imported or owned response indices, and sorts state by `idx`. Unknown nested item keys fail closed for owned and imported arrays; omitted top-level collection wrappers remain opaque and are preserved unchanged.
 

@@ -49,4 +49,4 @@ Destroy disables OpenAPI validation by setting its status to `false` and replaci
 
 ## Migrating v1.0.5 Configuration
 
-The v2 resource uses stable `ep_id` instead of `app_name`. Preserve all referenced local documents and follow the complete [v1.0.5 to v2.0 upgrade guide](../guides/v1_0_5_to_v2_0_0.html).
+The v2 resource uses stable `ep_id` instead of `app_name`. Preserve all referenced local documents and follow the complete [v1.0.5 to v2.0 upgrade guide](../guides/v1_0_5_to_v2_0_0).

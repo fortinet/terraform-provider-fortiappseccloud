@@ -14,14 +14,14 @@ func TestDecodeOverridesAcceptsReviewedProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DecodeOverrides() error = %v", err)
 	}
-	if len(overrides.Resources) != 25 {
-		t.Fatalf("resources = %d, want 25", len(overrides.Resources))
+	if len(overrides.Resources) != 26 {
+		t.Fatalf("resources = %d, want 26", len(overrides.Resources))
 	}
 	got := make([]string, 0, len(overrides.Resources))
 	for _, resource := range overrides.Resources {
 		got = append(got, resource.TerraformName)
 	}
-	want := []string{CSRFResourceName, URLAccessResourceName, RequestLimitsResourceName, KnownAttacksResourceName, HttpHeaderSecurityResourceName, GraphQLProtectionResourceName, JSONProtectionResourceName, ParameterValidationResourceName, WebSocketSecurityResourceName, InformationLeakageResourceName, DDoSPreventionResourceName, CookieSecurityResourceName, KnownBotsResourceName, BotDeceptionResourceName, BiometricsBasedDetectionResourceName, WaitingRoomResourceName, MITBProtectionResourceName, ThresholdDetectionResourceName, MLBotDetectionResourceName, FileProtectionResourceName, MobileAPIProtectionResourceName, XMLProtectionPolicyResourceName, RewritingRequestsResourceName, APIGatewayResourceName, CachingCompressionResourceName}
+	want := []string{CSRFResourceName, URLAccessResourceName, RequestLimitsResourceName, KnownAttacksResourceName, HttpHeaderSecurityResourceName, GraphQLProtectionResourceName, JSONProtectionResourceName, ParameterValidationResourceName, WebSocketSecurityResourceName, InformationLeakageResourceName, DDoSPreventionResourceName, CookieSecurityResourceName, KnownBotsResourceName, BotDeceptionResourceName, BiometricsBasedDetectionResourceName, WaitingRoomResourceName, MITBProtectionResourceName, ThresholdDetectionResourceName, MLBotDetectionResourceName, FileProtectionResourceName, MobileAPIProtectionResourceName, XMLProtectionPolicyResourceName, RewritingRequestsResourceName, APIGatewayResourceName, CachingCompressionResourceName, AccelerationResourceName}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("resource names = %#v, want %#v", got, want)
 	}
@@ -45,8 +45,8 @@ func TestDecodeOverridesAcceptsReviewedProfile(t *testing.T) {
 			activeDisables++
 		}
 	}
-	if activeDisables != 24 {
-		t.Fatalf("active standalone status disables = %d, want 24", activeDisables)
+	if activeDisables != 25 {
+		t.Fatalf("active standalone status disables = %d, want 25", activeDisables)
 	}
 	caching := findOverride(overrides, CachingCompressionResourceName)
 	if caching.Destroy.Mode != "forget" || caching.Destroy.Verified ||

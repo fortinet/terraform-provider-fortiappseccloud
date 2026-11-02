@@ -61,6 +61,8 @@ const (
 	APIGatewayPath                       = "/waf/apps/{ep_id}/api_gateway"
 	CachingCompressionResourceName       = "fortiappseccloud_waf_caching_compression"
 	CachingCompressionPath               = "/waf/apps/{ep_id}/caching_compression"
+	AccelerationResourceName             = "fortiappseccloud_waf_acceleration"
+	AccelerationPath                     = "/waf/apps/{ep_id}/acceleration"
 
 	forgetDestroyReason                     = "No DELETE operation exists and status=false disable semantics have not been live-verified"
 	noSafeStatusDestroyReason               = "No DELETE operation exists and no safe standalone writable boolean status is available for disable-on-destroy"
@@ -412,6 +414,16 @@ var (
 			},
 			scalarStringArrays: cachingCompressionScalarStringArrayExpectations(),
 		},
+		AccelerationResourceName: {
+			goName:         "Acceleration",
+			typeNameSuffix: "waf_acceleration",
+			operationName:  "web content acceleration",
+			path:           AccelerationPath,
+			fields:         accelerationFieldExpectations(),
+			collections: map[string]string{
+				"configs.exception_list": "exception_list",
+			},
+		},
 	}
 )
 
@@ -467,6 +479,28 @@ func cachingCompressionScalarStringArrayExpectations() map[string]scalarStringAr
 			required:      false,
 			provenance:    "Reviewed from OpenAPI 26.3.a: key_factor is a free-form array of key-factor enum strings inside the cache nested config object (no maxItems, optional). It is encoded as an ownership wrapper of item blocks carrying a synthetic factor string attribute, reusing the scalar-string-array omission/empty/populated semantics. Local-only; live behavior unverified.",
 		},
+	}
+}
+
+// accelerationFieldExpectations pins the reviewed field policy for the web
+// content acceleration envelope, its six boolean config scalars, and the
+// exception_list item fields (AccelerationException: required host_status/
+// url_pattern/url_type, optional host max 255, wire-only idx).
+func accelerationFieldExpectations() map[string]fieldExpectation {
+	return map[string]fieldExpectation{
+		"ep_id":                                   {terraformPolicy: "required"},
+		"template":                                {terraformPolicy: "required"},
+		"configs.status":                          {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.css_minify":                      {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.html_combine_heads":              {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.html_css2head":                   {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.html_minify":                     {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.js_minify":                       {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.exception_list.item.idx":         {terraformPolicy: "wire_only", wireOnly: true},
+		"configs.exception_list.item.host":        {terraformPolicy: "optional_computed", useStateForUnknown: true},
+		"configs.exception_list.item.host_status": {terraformPolicy: "required"},
+		"configs.exception_list.item.url_pattern": {terraformPolicy: "required"},
+		"configs.exception_list.item.url_type":    {terraformPolicy: "required"},
 	}
 }
 

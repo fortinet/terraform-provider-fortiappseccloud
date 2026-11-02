@@ -57,8 +57,8 @@ func TestProviderMetadataSchemaAndResources(t *testing.T) {
 	}
 
 	resources := configured.Resources(ctx)
-	if len(resources) != 69 {
-		t.Fatalf("Resources() returned %d resources, want 69", len(resources))
+	if len(resources) != 71 {
+		t.Fatalf("Resources() returned %d resources, want 71", len(resources))
 	}
 	resourceNames := make(map[string]struct{}, len(resources))
 	for _, constructor := range resources {

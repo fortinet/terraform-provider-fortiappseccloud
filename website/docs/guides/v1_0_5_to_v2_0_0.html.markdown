@@ -11,7 +11,7 @@ Version 2.0 upgrades state created by the public `fortinet/fortiappseccloud` pro
 
 Keep the existing resource addresses during the upgrade. Do not edit the state JSON, run `terraform state mv`, or run `terraform state replace-provider` for a state already using `fortinet/fortiappseccloud`.
 
-If the state still uses the historical private `fortinet/terraform/fortiwebcloud` provider, complete the [private-provider to v1.0.5 migration](fortiwebcloud_migration.html) first.
+If the state still uses the historical private `fortinet/terraform/fortiwebcloud` provider, complete the [private-provider to v1.0.5 migration](fortiwebcloud_migration) first.
 
 ## Before You Begin
 
@@ -203,7 +203,7 @@ Do not declare a partial origin list: this resource owns the complete server poo
 
 Resources introduced in v2 are not automatically added to state. Add and import them one at a time, following each resource's import documentation. Require a zero-change plan before treating an existing remote configuration as Terraform-managed. Pay particular attention to resources that own complete ordered lists.
 
-Read the [WAF configuration and import guidance](waf_configuration_guidance.html) before adopting app modules. Removing an imported app-module resource can invoke its destroy behavior and disable the live module.
+Read the [WAF configuration and import guidance](waf_configuration_guidance) before adopting app modules. Removing an imported app-module resource can invoke its destroy behavior and disable the live module.
 
 ## Troubleshooting
 
@@ -221,7 +221,7 @@ The first state refresh resolves legacy identity to `ep_id`. If the application 
 
 ### The state uses the private provider address
 
-Return to the [private-provider migration guide](fortiwebcloud_migration.html), complete its v1.0.5 migration, and then resume this guide.
+Return to the [private-provider migration guide](fortiwebcloud_migration), complete its v1.0.5 migration, and then resume this guide.
 
 ## Rollback
 

@@ -170,6 +170,10 @@ func (m *terraformCLIAppCertificateMock) create(w http.ResponseWriter, r *http.R
 		"https_status":  boolIntForTerraformCLITest(containsStringForTerraformCLITest(services, "https")),
 		"custom_port":   customPort,
 		"cert_type":     certType, "cert_auto_status": float64(7), "cert_challenge_mode": float64(2),
+		"ssl_options": map[string]any{
+			"encryption_level": "mozilla_intermediate",
+			"future_ssl_field": "preserve",
+		},
 		"future_endpoint_field": map[string]any{"preserve": true},
 	}
 	_ = json.NewEncoder(w).Encode(map[string]any{
@@ -204,6 +208,10 @@ func (m *terraformCLIAppCertificateMock) requirePreservedEndpointFields(t *testi
 	future, ok := m.lastPut["future_endpoint_field"].(map[string]any)
 	if !ok || future["preserve"] != true {
 		t.Fatalf("unknown endpoint field was not preserved: %#v", m.lastPut)
+	}
+	ssl, ok := m.lastPut["ssl_options"].(map[string]any)
+	if !ok || ssl["encryption_level"] != "mozilla_intermediate" || ssl["future_ssl_field"] != "preserve" {
+		t.Fatalf("unconfigured SSL options were not preserved: %#v", m.lastPut["ssl_options"])
 	}
 	for key := range m.lastPut {
 		if strings.Contains(key, "certificate") || strings.Contains(key, "private_key") || strings.Contains(key, "pem") {

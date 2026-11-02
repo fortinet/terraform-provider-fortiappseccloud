@@ -48,6 +48,10 @@ const (
 	certificateModeCustom    = "custom"
 	certificateTypeAutomatic = 0
 	certificateTypeCustom    = 1
+
+	sslEncryptionLevelModern       = "mozilla_modern"
+	sslEncryptionLevelIntermediate = "mozilla_intermediate"
+	sslEncryptionLevelOld          = "mozilla_old"
 )
 
 type appService interface {
@@ -87,6 +91,11 @@ type resourceModel struct {
 	Continent            types.String `tfsdk:"continent"`
 	BlockMode            types.Bool   `tfsdk:"block_mode"`
 	CertificateMode      types.String `tfsdk:"certificate_mode"`
+	HTTP2Status          types.Bool   `tfsdk:"http2_status"`
+	IPv6Option           types.Bool   `tfsdk:"ipv6_option"`
+	CertChallengeMode    types.String `tfsdk:"cert_challenge_mode"`
+	BlockURL             types.String `tfsdk:"block_url"`
+	SslOptions           types.Object `tfsdk:"ssl_options"`
 	InitialOrigin        types.Object `tfsdk:"initial_origin"`
 	Precheck             types.Bool   `tfsdk:"precheck"`
 	CNAMEs               types.List   `tfsdk:"cnames"`
@@ -105,6 +114,46 @@ var initialOriginTypes = map[string]attr.Type{
 	"address":  types.StringType,
 	"protocol": types.StringType,
 	"port":     types.Int64Type,
+}
+
+var sslOptionsTypes = map[string]attr.Type{
+	"encryption_level":                  types.StringType,
+	"tls_1_1":                           types.BoolType,
+	"tls_1_2":                           types.BoolType,
+	"tls_1_3":                           types.BoolType,
+	"http_2_https":                      types.BoolType,
+	"hsts_header":                       types.BoolType,
+	"hsts_max_age":                      types.Int64Type,
+	"hsts_preload":                      types.BoolType,
+	"hsts_sub_domains":                  types.BoolType,
+	"internal_cookie_secure":            types.BoolType,
+	"internal_cookie_httponly":          types.BoolType,
+	"selected_ssl_custom_cipher":        types.ListType{ElemType: types.StringType},
+	"selected_ssl_custom_cipher_http2":  types.ListType{ElemType: types.StringType},
+	"selected_tls13_custom_cipher":      types.ListType{ElemType: types.StringType},
+	"available_ssl_custom_cipher":       types.ListType{ElemType: types.StringType},
+	"available_ssl_custom_cipher_http2": types.ListType{ElemType: types.StringType},
+	"available_tls13_custom_cipher":     types.ListType{ElemType: types.StringType},
+}
+
+type sslOptionsModel struct {
+	EncryptionLevel               types.String `tfsdk:"encryption_level"`
+	TLS11                         types.Bool   `tfsdk:"tls_1_1"`
+	TLS12                         types.Bool   `tfsdk:"tls_1_2"`
+	TLS13                         types.Bool   `tfsdk:"tls_1_3"`
+	HTTP2HTTPS                    types.Bool   `tfsdk:"http_2_https"`
+	HSTSHeader                    types.Bool   `tfsdk:"hsts_header"`
+	HSTSMaxAge                    types.Int64  `tfsdk:"hsts_max_age"`
+	HSTSPreload                   types.Bool   `tfsdk:"hsts_preload"`
+	HSTSSubDomains                types.Bool   `tfsdk:"hsts_sub_domains"`
+	InternalCookieSecure          types.Bool   `tfsdk:"internal_cookie_secure"`
+	InternalCookieHTTPOnly        types.Bool   `tfsdk:"internal_cookie_httponly"`
+	SelectedSSLCustomCipher       types.List   `tfsdk:"selected_ssl_custom_cipher"`
+	SelectedSSLCustomCipherHTTP2  types.List   `tfsdk:"selected_ssl_custom_cipher_http2"`
+	SelectedTLS13CustomCipher     types.List   `tfsdk:"selected_tls13_custom_cipher"`
+	AvailableSSLCustomCipher      types.List   `tfsdk:"available_ssl_custom_cipher"`
+	AvailableSSLCustomCipherHTTP2 types.List   `tfsdk:"available_ssl_custom_cipher_http2"`
+	AvailableTLS13CustomCipher    types.List   `tfsdk:"available_tls13_custom_cipher"`
 }
 
 // NewResource creates the Framework application resource under the legacy public name.
@@ -148,7 +197,7 @@ func currentSchema() schema.Schema {
 			"http_port":  schema.Int64Attribute{Optional: true, Computed: true, Default: int64default.StaticInt64(80), Validators: []validator.Int64{int64validator.Between(1, 65535)}},
 			"https_port": schema.Int64Attribute{Optional: true, Computed: true, Default: int64default.StaticInt64(443), Validators: []validator.Int64{int64validator.Between(1, 65535)}},
 			"platform": schema.StringAttribute{
-				Required: true, Validators: []validator.String{stringvalidator.OneOf("AWS", "Azure", "GCP", "OCI", "C8T")},
+				Required: true, Validators: []validator.String{stringvalidator.OneOf("AWS", "Azure", "GCP")},
 				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"region":     schema.StringAttribute{Optional: true},
@@ -167,7 +216,24 @@ func currentSchema() schema.Schema {
 				},
 				MarkdownDescription: "Certificate-management mode. `automatic` maps to API `cert_type=0`; `custom` maps to `cert_type=1`. This field does not upload or attach certificate, private-key, CA, or CRL content.",
 			},
-			"precheck":         schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false)},
+			"precheck": schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false)},
+			"http2_status": schema.BoolAttribute{
+				Optional: true, Computed: true,
+				MarkdownDescription: "Enables HTTP/2 on the HTTPS listener. The API requires the `https` service to be enabled and standard listener ports to remain in use; the API rejects invalid combinations.",
+			},
+			"ipv6_option": schema.BoolAttribute{
+				Optional: true, Computed: true,
+				MarkdownDescription: "Enables IPv6 listener addresses. Only supported on AWS applications with standard listener ports; the API rejects it otherwise.",
+			},
+			"cert_challenge_mode": schema.StringAttribute{
+				Optional: true, Computed: true,
+				Validators:          []validator.String{stringvalidator.OneOf("http", "dns")},
+				MarkdownDescription: "ACME challenge mode for automatic certificates: `http` maps to API `cert_challenge_mode=1` and `dns` maps to `cert_challenge_mode=2`. Applies when `certificate_mode` is `automatic`; the API ignores it for custom certificates.",
+			},
+			"block_url": schema.StringAttribute{
+				Optional: true, Computed: true,
+				MarkdownDescription: "Block-page message name applied when blocking responses. Valid values depend on the account's configured block-page messages; the API validates the name.",
+			},
 			"cnames":           schema.ListAttribute{Computed: true, ElementType: types.StringType},
 			"placement_region": schema.StringAttribute{Computed: true},
 			"attached_template_id": schema.StringAttribute{
@@ -185,6 +251,32 @@ func currentSchema() schema.Schema {
 				"protocol": schema.StringAttribute{Required: true, Validators: []validator.String{stringvalidator.OneOf("http", "https")}},
 				"port":     schema.Int64Attribute{Required: true, Validators: []validator.Int64{int64validator.Between(1, 65535)}},
 			}},
+			"ssl_options": schema.SingleNestedBlock{
+				MarkdownDescription: "SSL/TLS options. The enabled TLS versions are derived from encryption_level (mozilla_modern: TLS 1.3 only; mozilla_intermediate: TLS 1.2/1.3; mozilla_old: TLS 1.1/1.2/1.3) and are recorded as computed values. Cipher lists are validated by the API. Omit the block to preserve the remote SSL/TLS configuration.",
+				Attributes: map[string]schema.Attribute{
+					"encryption_level": schema.StringAttribute{
+						Optional:            true,
+						Validators:          []validator.String{stringvalidator.OneOf(sslEncryptionLevelModern, sslEncryptionLevelIntermediate, sslEncryptionLevelOld)},
+						MarkdownDescription: "Encryption level. Recomputes the enabled TLS versions: `mozilla_modern` enables TLS 1.3 only, `mozilla_intermediate` enables TLS 1.2/1.3, `mozilla_old` enables TLS 1.1/1.2/1.3.",
+					},
+					"tls_1_1":                           schema.BoolAttribute{Computed: true, MarkdownDescription: "TLS 1.1 enabled. Derived from encryption_level and forced false when http2_status is enabled."},
+					"tls_1_2":                           schema.BoolAttribute{Computed: true, MarkdownDescription: "TLS 1.2 enabled. Derived from encryption_level."},
+					"tls_1_3":                           schema.BoolAttribute{Computed: true, MarkdownDescription: "TLS 1.3 enabled. Derived from encryption_level."},
+					"http_2_https":                      schema.BoolAttribute{Optional: true, Computed: true, MarkdownDescription: "Redirect HTTP to HTTPS. The API requires both services enabled and the 80/443 default ports; the API rejects other combinations."},
+					"hsts_header":                       schema.BoolAttribute{Optional: true, Computed: true, MarkdownDescription: "Send the HSTS header."},
+					"hsts_max_age":                      schema.Int64Attribute{Optional: true, Computed: true, Validators: []validator.Int64{int64validator.Between(3600, 31536000)}, MarkdownDescription: "HSTS max-age in seconds (3600-31536000)."},
+					"hsts_preload":                      schema.BoolAttribute{Optional: true, Computed: true, MarkdownDescription: "Include this application in browser preload lists."},
+					"hsts_sub_domains":                  schema.BoolAttribute{Optional: true, Computed: true, MarkdownDescription: "Apply HSTS to sub-domains."},
+					"internal_cookie_secure":            schema.BoolAttribute{Optional: true, Computed: true, MarkdownDescription: "Mark internal cookies Secure."},
+					"internal_cookie_httponly":          schema.BoolAttribute{Optional: true, Computed: true, MarkdownDescription: "Mark internal cookies HttpOnly."},
+					"selected_ssl_custom_cipher":        schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "TLS 1.1/1.2 cipher list in effect. Recorded from the remote configuration; custom cipher selection is not available through this resource."},
+					"selected_ssl_custom_cipher_http2":  schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "TLS 1.2 cipher list for HTTP2 in effect. Recorded from the remote configuration; custom cipher selection is not available through this resource."},
+					"selected_tls13_custom_cipher":      schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "TLS 1.3 cipher list in effect. Recorded from the remote configuration; custom cipher selection is not available through this resource."},
+					"available_ssl_custom_cipher":       schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "Available TLS 1.1/1.2 ciphers for this application."},
+					"available_ssl_custom_cipher_http2": schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "Available TLS 1.2 ciphers for HTTP2."},
+					"available_tls13_custom_cipher":     schema.ListAttribute{Computed: true, ElementType: types.StringType, MarkdownDescription: "Available TLS 1.3 ciphers."},
+				},
+			},
 		},
 	}
 }
@@ -193,6 +285,11 @@ func schemaV1() schema.Schema {
 	previous := currentSchema()
 	previous.Version = 1
 	delete(previous.Attributes, "certificate_mode")
+	delete(previous.Attributes, "http2_status")
+	delete(previous.Attributes, "ipv6_option")
+	delete(previous.Attributes, "cert_challenge_mode")
+	delete(previous.Attributes, "block_url")
+	delete(previous.Blocks, "ssl_options")
 	return previous
 }
 
@@ -296,6 +393,7 @@ func upgradeStateV0(ctx context.Context, req resource.UpgradeStateRequest, resp 
 		ExtraDomains: old.ExtraDomains, Services: serviceValue, HTTPPort: types.Int64Value(80), HTTPSPort: types.Int64Value(443),
 		Platform: types.StringNull(), Region: types.StringNull(), CDN: old.CDN, GlobalCDN: globalCDN, Continent: old.Continent,
 		BlockMode: old.Block, CertificateMode: types.StringNull(), InitialOrigin: origin, Precheck: types.BoolValue(false), CNAMEs: cnameValue, PlacementRegion: types.StringNull(),
+		HTTP2Status: types.BoolNull(), IPv6Option: types.BoolNull(), CertChallengeMode: types.StringNull(), BlockURL: types.StringNull(), SslOptions: types.ObjectNull(sslOptionsTypes),
 		AttachedTemplateID: types.StringNull(), AttachedTemplateName: old.Template,
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &upgraded)...)
@@ -335,6 +433,7 @@ func upgradeStateV1(ctx context.Context, req resource.UpgradeStateRequest, resp 
 		ExtraDomains: old.ExtraDomains, Services: old.Services, HTTPPort: old.HTTPPort, HTTPSPort: old.HTTPSPort,
 		Platform: old.Platform, Region: old.Region, CDN: old.CDN, GlobalCDN: old.GlobalCDN, Continent: old.Continent,
 		BlockMode: old.BlockMode, CertificateMode: types.StringNull(), InitialOrigin: old.InitialOrigin, Precheck: old.Precheck,
+		HTTP2Status: types.BoolNull(), IPv6Option: types.BoolNull(), CertChallengeMode: types.StringNull(), BlockURL: types.StringNull(), SslOptions: types.ObjectNull(sslOptionsTypes),
 		CNAMEs: old.CNAMEs, PlacementRegion: old.PlacementRegion,
 		AttachedTemplateID: old.AttachedTemplateID, AttachedTemplateName: old.AttachedTemplateName,
 	}
@@ -363,6 +462,57 @@ func (r *appResource) ValidateConfig(ctx context.Context, req resource.ValidateC
 		resp.Diagnostics.AddAttributeError(path.Root("https_port"), "Invalid listener ports", "http_port and https_port must differ.")
 	}
 	validatePlacement(config, &resp.Diagnostics)
+	validateSslOptionsConfig(ctx, config, &resp.Diagnostics)
+}
+
+// validateSslOptionsConfig rejects endpoint SSL option combinations the
+// application UI and API treat as invalid so misconfiguration fails at plan
+// time instead of apply time.
+func validateSslOptionsConfig(ctx context.Context, config resourceModel, diagnostics *diag.Diagnostics) {
+	if config.SslOptions.IsNull() || config.SslOptions.IsUnknown() {
+		return
+	}
+	var options sslOptionsModel
+	if diags := config.SslOptions.As(ctx, &options, basetypes.ObjectAsOptions{}); diags.HasError() {
+		diagnostics.Append(diags...)
+		return
+	}
+	if options.EncryptionLevel.IsNull() {
+		diagnostics.AddAttributeError(
+			path.Root("ssl_options").AtName("encryption_level"),
+			"Missing SSL encryption level",
+			"Set encryption_level when the ssl_options block is configured, or omit the block to preserve the remote SSL/TLS configuration.",
+		)
+	}
+	if options.HSTSHeader.IsUnknown() {
+		return
+	}
+	hstsEnabled := !options.HSTSHeader.IsNull() && options.HSTSHeader.ValueBool()
+	if hstsEnabled {
+		return
+	}
+	// HSTS is disabled: its dependent settings must not be configured. The
+	// GUI hides these fields when HSTS is off and the API would ignore them,
+	// so a configuration that sets them is rejected to avoid silently
+	// diverging from the written intent.
+	hstsDependent := []struct {
+		name  string
+		set   bool
+		value string
+	}{
+		{"hsts_max_age", !options.HSTSMaxAge.IsNull() && !options.HSTSMaxAge.IsUnknown(), "hsts_max_age"},
+		{"hsts_preload", !options.HSTSPreload.IsNull() && !options.HSTSPreload.IsUnknown(), "hsts_preload"},
+		{"hsts_sub_domains", !options.HSTSSubDomains.IsNull() && !options.HSTSSubDomains.IsUnknown(), "hsts_sub_domains"},
+	}
+	for _, dependent := range hstsDependent {
+		if dependent.set {
+			diagnostics.AddAttributeError(
+				path.Root("ssl_options").AtName(dependent.value),
+				"Invalid HSTS configuration",
+				fmt.Sprintf("ssl_options.%s can only be set when ssl_options.hsts_header is enabled. Remove the field or enable hsts_header.", dependent.name),
+			)
+		}
+	}
 }
 
 func (r *appResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -459,12 +609,58 @@ func (r *appResource) Create(ctx context.Context, req resource.CreateRequest, re
 		}
 		epID = resolved.EPID
 	}
+	// Keep the created application's identity even if a later read or endpoint
+	// update fails, so Terraform can track and clean up the partial creation.
+	plan.EPID = types.StringValue(epID)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	application, err := r.waitForApplication(ctx, epID, true)
 	if err != nil {
 		resp.Diagnostics.AddError("Application did not become readable", err.Error())
 		return
 	}
+	if endpointFieldsConfigured(plan) {
+		// The create API does not accept the additional endpoint attributes, so
+		// a configuration that declares them applies them with the same fresh
+		// GET-merge-PUT lifecycle the update path uses.
+		document, err := r.service.GetApplicationEndpoint(ctx, epID)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to read application endpoint after create", err.Error())
+			return
+		}
+		prepareEndpointUpdate(document, plan, ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if err := r.service.PutApplicationEndpoint(ctx, epID, document); err != nil {
+			resp.Diagnostics.AddError("Unable to apply application endpoint settings after create", err.Error())
+			return
+		}
+	}
 	r.setState(ctx, plan, application, created.DomainInfo, &resp.State, &resp.Diagnostics)
+}
+
+// endpointFieldsConfigured reports whether the plan declares any of the
+// additional endpoint attributes the create API does not accept directly.
+func endpointFieldsConfigured(plan resourceModel) bool {
+	if !plan.HTTP2Status.IsNull() && !plan.HTTP2Status.IsUnknown() {
+		return true
+	}
+	if !plan.IPv6Option.IsNull() && !plan.IPv6Option.IsUnknown() {
+		return true
+	}
+	if !plan.CertChallengeMode.IsNull() && !plan.CertChallengeMode.IsUnknown() {
+		return true
+	}
+	if !plan.BlockURL.IsNull() && !plan.BlockURL.IsUnknown() {
+		return true
+	}
+	if !plan.SslOptions.IsNull() && !plan.SslOptions.IsUnknown() {
+		return true
+	}
+	return false
 }
 
 func (r *appResource) precheckOrigin(ctx context.Context, domainName string, origin initialOriginModel) error {
@@ -719,6 +915,20 @@ func (r *appResource) setState(ctx context.Context, prior resourceModel, applica
 	updated.HTTPPort = types.Int64Value(httpPort)
 	updated.HTTPSPort = types.Int64Value(httpsPort)
 	updated.CertificateMode = certificateMode
+	updated.HTTP2Status = jsonBoolValue(endpoint["http2_status"])
+	updated.IPv6Option = jsonBoolValue(endpoint["ipv6_option"])
+	updated.CertChallengeMode = certChallengeModeFromEndpoint(endpoint)
+	updated.BlockURL = types.StringNull()
+	if value, ok := endpoint["block_url"].(string); ok {
+		updated.BlockURL = types.StringValue(value)
+	}
+	// An omitted protocol-5 block must stay null, even when the API returns
+	// its effective settings, so existing configurations remain converged.
+	// A fresh import has no required app_name yet and hydrates remote options
+	// so a configured SSL block can be adopted without losing its values.
+	if !prior.SslOptions.IsNull() || prior.AppName.IsNull() {
+		updated.SslOptions = sslOptionsFromEndpoint(ctx, endpoint, diagnostics)
+	}
 	updated.Platform = types.StringValue(application.Platform)
 	updated.CDN = types.BoolValue(application.CDNStatus == 1)
 	updated.BlockMode = types.BoolValue(application.BlockMode == 1)
@@ -814,6 +1024,86 @@ func prepareEndpointUpdate(document map[string]any, plan resourceModel, ctx cont
 	if certType := certificateTypePointer(plan.CertificateMode); certType != nil {
 		document["cert_type"] = *certType
 	}
+	// The endpoint attributes below preserve the fresh GET value when the plan
+	// carries no known value, so an update triggered by another owned field
+	// never clears a remote setting the practitioner never configured here.
+	if !plan.HTTP2Status.IsNull() && !plan.HTTP2Status.IsUnknown() {
+		document["http2_status"] = boolInt(plan.HTTP2Status.ValueBool())
+	}
+	if !plan.IPv6Option.IsNull() && !plan.IPv6Option.IsUnknown() {
+		document["ipv6_option"] = boolInt(plan.IPv6Option.ValueBool())
+	}
+	if mode := certChallengeModePointer(plan.CertChallengeMode); mode != nil {
+		document["cert_challenge_mode"] = *mode
+	}
+	if !plan.BlockURL.IsNull() && !plan.BlockURL.IsUnknown() {
+		document["block_url"] = plan.BlockURL.ValueString()
+	}
+	if !plan.SslOptions.IsNull() && !plan.SslOptions.IsUnknown() {
+		applySslOptionsPatch(ctx, document, plan.SslOptions, diagnostics)
+	}
+}
+
+// applySslOptionsPatch merges a configured ssl_options block into the fresh
+// GET endpoint document. The update API treats missing ssl_options members as
+// their defaults, so every writable field is carried: unknown plan members
+// fall back to the fresh GET value and only practitioner-set members replace
+// it. Response-only reference lists (available_* ciphers) are not sent.
+func applySslOptionsPatch(ctx context.Context, document map[string]any, block types.Object, diagnostics *diag.Diagnostics) {
+	var options sslOptionsModel
+	if diags := block.As(ctx, &options, basetypes.ObjectAsOptions{}); diags.HasError() {
+		diagnostics.Append(diags...)
+		return
+	}
+	remote, _ := document["ssl_options"].(map[string]any)
+	merged := map[string]any{}
+	for _, field := range []string{"tls_1_1", "tls_1_2", "tls_1_3", "http_2_https", "hsts_header", "hsts_max_age", "hsts_preload", "hsts_sub_domains", "internal_cookie_secure", "internal_cookie_httponly", "selected_ssl_custom_cipher", "selected_ssl_custom_cipher_http2", "selected_tls13_custom_cipher", "encryption_level"} {
+		if value, exists := remote[field]; exists {
+			merged[field] = cloneJSONValue(value)
+		}
+	}
+	if !options.EncryptionLevel.IsNull() && !options.EncryptionLevel.IsUnknown() {
+		merged["encryption_level"] = options.EncryptionLevel.ValueString()
+	}
+	setBoolField := func(key string, value types.Bool) {
+		if !value.IsNull() && !value.IsUnknown() {
+			merged[key] = boolInt(value.ValueBool())
+		}
+	}
+	setBoolField("http_2_https", options.HTTP2HTTPS)
+	setBoolField("hsts_header", options.HSTSHeader)
+	setBoolField("hsts_preload", options.HSTSPreload)
+	setBoolField("hsts_sub_domains", options.HSTSSubDomains)
+	setBoolField("internal_cookie_secure", options.InternalCookieSecure)
+	setBoolField("internal_cookie_httponly", options.InternalCookieHTTPOnly)
+	if !options.HSTSMaxAge.IsNull() && !options.HSTSMaxAge.IsUnknown() {
+		merged["hsts_max_age"] = options.HSTSMaxAge.ValueInt64()
+	}
+	// The selected_* cipher lists are computed-only: they carry the fresh GET
+	// value so an update preserves the remote ciphers and never overwrites
+	// them with the API default.
+	document["ssl_options"] = merged
+}
+
+// cloneJSONValue deep-copies a decoded JSON value so remote data is never
+// mutated while building an update document.
+func cloneJSONValue(value any) any {
+	switch value := value.(type) {
+	case map[string]any:
+		result := make(map[string]any, len(value))
+		for key, item := range value {
+			result[key] = cloneJSONValue(item)
+		}
+		return result
+	case []any:
+		result := make([]any, len(value))
+		for index, item := range value {
+			result[index] = cloneJSONValue(item)
+		}
+		return result
+	default:
+		return value
+	}
 }
 
 func placementChanged(a, b resourceModel) bool {
@@ -821,7 +1111,40 @@ func placementChanged(a, b resourceModel) bool {
 }
 
 func endpointChanged(a, b resourceModel) bool {
-	return !a.ExtraDomains.Equal(b.ExtraDomains) || !a.Services.Equal(b.Services) || a.HTTPPort.ValueInt64() != b.HTTPPort.ValueInt64() || a.HTTPSPort.ValueInt64() != b.HTTPSPort.ValueInt64() || certificateModeChanged(a.CertificateMode, b.CertificateMode)
+	return !a.ExtraDomains.Equal(b.ExtraDomains) || !a.Services.Equal(b.Services) || a.HTTPPort.ValueInt64() != b.HTTPPort.ValueInt64() || a.HTTPSPort.ValueInt64() != b.HTTPSPort.ValueInt64() ||
+		certificateModeChanged(a.CertificateMode, b.CertificateMode) ||
+		knownBoolChanged(a.HTTP2Status, b.HTTP2Status) ||
+		knownBoolChanged(a.IPv6Option, b.IPv6Option) ||
+		knownStringChanged(a.CertChallengeMode, b.CertChallengeMode) ||
+		knownStringChanged(a.BlockURL, b.BlockURL) ||
+		sslOptionsChanged(a.SslOptions, b.SslOptions)
+}
+
+// sslOptionsChanged reports a practitioner-driven change to the ssl_options
+// block. A null or unknown plan block is not configured here and preserves the
+// fresh remote document during the merge-PUT.
+func sslOptionsChanged(prior, plan types.Object) bool {
+	if plan.IsNull() || plan.IsUnknown() {
+		return false
+	}
+	return prior.IsNull() || prior.IsUnknown() || !prior.Equal(plan)
+}
+
+// knownBoolChanged reports a practitioner-driven change for an optional
+// computed endpoint boolean: an unknown or null plan value means the field is
+// not configured here and must preserve the fresh remote value.
+func knownBoolChanged(prior, plan types.Bool) bool {
+	if plan.IsNull() || plan.IsUnknown() {
+		return false
+	}
+	return prior.IsNull() || prior.IsUnknown() || !prior.Equal(plan)
+}
+
+func knownStringChanged(prior, plan types.String) bool {
+	if plan.IsNull() || plan.IsUnknown() {
+		return false
+	}
+	return prior.IsNull() || prior.IsUnknown() || !prior.Equal(plan)
 }
 
 func certificateModeChanged(prior, plan types.String) bool {
@@ -840,6 +1163,64 @@ func certificateTypePointer(mode types.String) *int {
 		value = certificateTypeCustom
 	}
 	return &value
+}
+
+const (
+	certChallengeModeHTTP = 1
+	certChallengeModeDNS  = 2
+)
+
+func certChallengeModePointer(mode types.String) *int {
+	if mode.IsNull() || mode.IsUnknown() {
+		return nil
+	}
+	if mode.ValueString() == "dns" {
+		value := certChallengeModeDNS
+		return &value
+	}
+	value := certChallengeModeHTTP
+	return &value
+}
+
+func certChallengeModeFromEndpoint(document map[string]any) types.String {
+	value, exists := document["cert_challenge_mode"]
+	if !exists || value == nil {
+		return types.StringNull()
+	}
+	switch value := value.(type) {
+	case float64:
+		if value != certChallengeModeHTTP && value != certChallengeModeDNS {
+			return types.StringNull()
+		}
+		if value == certChallengeModeDNS {
+			return types.StringValue("dns")
+		}
+	case int:
+		if value != certChallengeModeHTTP && value != certChallengeModeDNS {
+			return types.StringNull()
+		}
+		if value == certChallengeModeDNS {
+			return types.StringValue("dns")
+		}
+	case int64:
+		if value != certChallengeModeHTTP && value != certChallengeModeDNS {
+			return types.StringNull()
+		}
+		if value == certChallengeModeDNS {
+			return types.StringValue("dns")
+		}
+	case json.Number:
+		parsed, err := value.Int64()
+		if err != nil || (parsed != certChallengeModeHTTP && parsed != certChallengeModeDNS) {
+			return types.StringNull()
+		}
+		if parsed == certChallengeModeDNS {
+			return types.StringValue("dns")
+		}
+	default:
+		return types.StringNull()
+	}
+	return types.StringValue("http")
 }
 
 func certificateModeFromEndpoint(document map[string]any) (types.String, error) {
@@ -925,6 +1306,85 @@ func jsonInt64(value any, fallback int64) int64 {
 		return value
 	}
 	return fallback
+}
+
+// jsonBoolValue decodes a 0/1 integer or boolean endpoint field into an
+// optional-computed Terraform value, returning null when the response omits
+// the field so a later update preserves the remote value instead of forcing a
+// change.
+func jsonBoolValue(value any) types.Bool {
+	if value == nil {
+		return types.BoolNull()
+	}
+	switch value := value.(type) {
+	case bool:
+		return types.BoolValue(value)
+	case float64:
+		return types.BoolValue(value != 0)
+	case int:
+		return types.BoolValue(value != 0)
+	case int64:
+		return types.BoolValue(value != 0)
+	}
+	return types.BoolNull()
+}
+
+// anyString returns a string endpoint field or "" when the response omits it.
+func anyString(value any) string {
+	if text, ok := value.(string); ok {
+		return text
+	}
+	return ""
+}
+
+// sslOptionsFromEndpoint decodes the GET endpoint ssl_options object into the
+// optional Terraform block. A response without ssl_options yields a null
+// block so an omitted configuration stays converged.
+func sslOptionsFromEndpoint(ctx context.Context, endpoint map[string]any, diagnostics *diag.Diagnostics) types.Object {
+	remote, ok := endpoint["ssl_options"].(map[string]any)
+	if !ok || remote == nil {
+		return types.ObjectNull(sslOptionsTypes)
+	}
+	encryptionLevel := anyString(remote["encryption_level"])
+	switch encryptionLevel {
+	case sslEncryptionLevelModern, sslEncryptionLevelIntermediate, sslEncryptionLevelOld:
+	default:
+		diagnostics.AddError("Unable to read SSL options", fmt.Sprintf("application endpoint returned unsupported encryption_level %q", encryptionLevel))
+		return types.ObjectNull(sslOptionsTypes)
+	}
+	listFromField := func(key string) types.List {
+		values, _ := remote[key].([]any)
+		result := make([]string, 0, len(values))
+		for _, value := range values {
+			if text, ok := value.(string); ok {
+				result = append(result, text)
+			}
+		}
+		list, listDiags := types.ListValueFrom(ctx, types.StringType, result)
+		diagnostics.Append(listDiags...)
+		return list
+	}
+	object, objectDiags := types.ObjectValue(sslOptionsTypes, map[string]attr.Value{
+		"encryption_level":                  types.StringValue(encryptionLevel),
+		"tls_1_1":                           jsonBoolValue(remote["tls_1_1"]),
+		"tls_1_2":                           jsonBoolValue(remote["tls_1_2"]),
+		"tls_1_3":                           jsonBoolValue(remote["tls_1_3"]),
+		"http_2_https":                      jsonBoolValue(remote["http_2_https"]),
+		"hsts_header":                       jsonBoolValue(remote["hsts_header"]),
+		"hsts_max_age":                      types.Int64Value(jsonInt64(remote["hsts_max_age"], 0)),
+		"hsts_preload":                      jsonBoolValue(remote["hsts_preload"]),
+		"hsts_sub_domains":                  jsonBoolValue(remote["hsts_sub_domains"]),
+		"internal_cookie_secure":            jsonBoolValue(remote["internal_cookie_secure"]),
+		"internal_cookie_httponly":          jsonBoolValue(remote["internal_cookie_httponly"]),
+		"selected_ssl_custom_cipher":        listFromField("selected_ssl_custom_cipher"),
+		"selected_ssl_custom_cipher_http2":  listFromField("selected_ssl_custom_cipher_http2"),
+		"selected_tls13_custom_cipher":      listFromField("selected_tls13_custom_cipher"),
+		"available_ssl_custom_cipher":       listFromField("available_ssl_custom_cipher"),
+		"available_ssl_custom_cipher_http2": listFromField("available_ssl_custom_cipher_http2"),
+		"available_tls13_custom_cipher":     listFromField("available_tls13_custom_cipher"),
+	})
+	diagnostics.Append(objectDiags...)
+	return object
 }
 
 func nullableStringValue(value string) types.String {

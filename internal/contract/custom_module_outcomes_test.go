@@ -18,9 +18,11 @@ func TestReviewedCustomModuleOutcomePartition(t *testing.T) {
 	wantModules := []string{
 		"anomaly_detection",
 		"ca_certificate",
+		"cert_proxy",
 		"cors_protection",
 		"crl_certificate",
 		"custom_rule",
+		"dns_resolve",
 		"global_trust_list_parameter",
 		"inter_certificate",
 		"ip_protection",
@@ -75,7 +77,7 @@ func TestReviewedCustomModuleOutcomePartition(t *testing.T) {
 		t.Fatalf("reviewed custom-module outcome partition = %#v, want %#v", gotModules, wantModules)
 	}
 
-	wantKindCounts := map[string]int{"resource": 7, "data_source": 2, "unsupported": 7}
+	wantKindCounts := map[string]int{"resource": 7, "data_source": 2, "unsupported": 9}
 	gotKindCounts := make(map[string]int)
 	for _, outcome := range outcomes {
 		gotKindCounts[outcome.kind]++

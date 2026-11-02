@@ -28,8 +28,8 @@ func TestCustomModuleLedgerFreeze(t *testing.T) {
 
 	custom := unionSets(designCustomAppModules, schemaCustomAppModules)
 	wantCustom := []string{
-		"anomaly_detection", "ca_certificate", "cors_protection", "crl_certificate",
-		"custom_rule", "endpoint", "global_trust_list_parameter",
+		"anomaly_detection", "ca_certificate", "cert_proxy", "cors_protection",
+		"crl_certificate", "custom_rule", "dns_resolve", "endpoint", "global_trust_list_parameter",
 		"inter_certificate", "ip_protection",
 		"log_settings", "ml_api_protection", "modules", "routings", "server_ca",
 		"server_crl", "servers", "signature_exception", "sni_certificate",
@@ -38,17 +38,17 @@ func TestCustomModuleLedgerFreeze(t *testing.T) {
 		t.Fatalf("custom union = %#v, want %#v", got, wantCustom)
 	}
 
-	// The 16 remaining custom pairs exclude endpoint (owned by waf_app) and
+	// The 18 remaining custom pairs exclude endpoint (owned by waf_app) and
 	// servers (owned by waf_origin_servers), which are already live-verified.
 	remaining := []string{
 		"global_trust_list_parameter", "anomaly_detection", "cors_protection",
 		"ip_protection", "routings", "custom_rule", "ml_api_protection",
 		"signature_exception", "log_settings", "modules", "inter_certificate",
 		"sni_certificate", "server_ca", "server_crl", "ca_certificate",
-		"crl_certificate",
+		"crl_certificate", "cert_proxy", "dns_resolve",
 	}
-	if len(remaining) != 16 {
-		t.Fatalf("remaining custom count = %d, want 16", len(remaining))
+	if len(remaining) != 18 {
+		t.Fatalf("remaining custom count = %d, want 18", len(remaining))
 	}
 	for _, module := range remaining {
 		if !has(custom, module) {
@@ -80,6 +80,7 @@ func TestCustomModuleLedgerFreeze(t *testing.T) {
 		"modules":             "fortiappseccloud_waf_modules",
 		"ca_certificate":      "fortiappseccloud_waf_ca_certificate",
 		"crl_certificate":     "fortiappseccloud_waf_crl_certificate",
+		"cert_proxy":          "fortiappseccloud_waf_cert_proxy",
 	}
 	for module, wantOwner := range owners {
 		if got := appModuleOwner(module); got != wantOwner {
